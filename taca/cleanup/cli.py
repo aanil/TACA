@@ -19,14 +19,11 @@ def cleanup(ctx, status_db_config):
               help='Days to consider as thershold, should not be combined with option "--hours"')
 @click.option('-h', '--hours', type=click.IntRange(min=1),
               help='Hours to consider as thershold, should not be combined with option "--days"')
-@click.option('--copy_not_move', is_flag=True, default=False,
-              help='Copy FCs to nosync rather than move them. '
-              'This leaves the directory in the original location')
 @click.pass_context
-def nas(ctx, days, hours, copy_not_move):
+def nas(ctx, days, hours):
     """Do appropriate cleanup on NAS."""
     seconds = misc.to_seconds(days, hours)
-    cln.cleanup_nas(seconds, copy_not_move)
+    cln.cleanup_nas(seconds)
 
 @cleanup.command()
 @click.option('-d', '--days', type=click.IntRange(min=1),

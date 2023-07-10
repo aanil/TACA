@@ -74,7 +74,7 @@ class backup_utils(object):
     def avail_disk_space(self, path, run):
         """Check the space on file system based on parent directory of the run."""
         # not able to fetch runtype use the max size as precaution, size units in GB
-        illumina_run_sizes = {'hiseq': 500, 'hiseqx': 900, 'novaseq': 1800, 'miseq': 20, 'nextseq': 50}
+        illumina_run_sizes = {'hiseq': 500, 'hiseqx': 900, 'novaseq': 1800, 'miseq': 20, 'nextseq': 50, 'NovaSeqXPlus': 1800}
         required_size = illumina_run_sizes.get(self._get_run_type(run), 900) * 2
         # check for any ongoing runs and add up the required size accrdingly
         for ddir in self.data_dirs.values():
@@ -127,6 +127,8 @@ class backup_utils(object):
                 run_type = 'novaseq'
             elif '_NS' in run:
                 run_type = 'nextseq'
+            elif '_LH' in run:
+                run_type = 'NovaSeqXPlus'
             else:
                 run_type = 'hiseq'
         except:
@@ -213,8 +215,14 @@ class backup_utils(object):
         bk = cls(run)
         bk.collect_runs(ext='.tar.gz')
         logger.info('In total, found {} run(s) to be encrypted'.format(len(bk.runs)))
+        novaseqxplus_arch_path = bk.archive_dirs['novaseqxplus']
         for run in bk.runs:
-            run.flag = '{}.encrypting'.format(run.name)
+            if bk._get_run_type(run.name)=='NovaSeqXPlus':
+                run.zip = os.path.join(novaseqxplus_arch_path, run.zip)
+                run.zip_encrypted = os.path.join(novaseqxplus_arch_path, run.zip_encrypted)
+                run.flag = '{}.encrypting'.format(os.path.join(novaseqxplus_arch_path, run.name))
+            else:
+                run.flag = '{}.encrypting'.format(run.name)
             run.dst_key_encrypted = os.path.join(bk.keys_path, run.key_encrypted)
             tmp_files = [run.zip_encrypted, run.key_encrypted, run.key, run.flag]
             logger.info('Encryption of run {} is now started'.format(run.name))
@@ -243,8 +251,9 @@ class backup_utils(object):
                     logger.info('Creating zipped archive for run {}'.format(run.name))
                     if bk._call_commands(cmd1='tar -cf - {}'.format(run.name), cmd2='pigz --fast -c -',
                                          out_file=run.zip, mail_failed=True, tmp_files=[run.zip, run.flag]):
-                        logger.info('Run {} was successfully compressed, so removing the run source directory'.format(run.name))
-                        shutil.rmtree(run.name)
+                        logger.info('Run {} was successfully compressed, so removing the run source directory if run is not NovaSeqXPlus'.format(run.name))
+                        if bk._get_run_type(run.name)!='NovaSeqXPlus':
+                            shutil.rmtree(run.name)
                     else:
                         logger.warn('Skipping run {} and moving on'.format(run.name))
                         continue
@@ -302,8 +311,12 @@ class backup_utils(object):
         bk = cls(run)
         bk.collect_runs(ext='.tar.gz.gpg', filter_by_ext=True)
         logger.info('In total, found {} run(s) to send PDC'.format(len(bk.runs)))
+        novaseqxplus_arch_path = bk.archive_dirs['novaseqxplus']
         for run in bk.runs:
-            run.flag = '{}.archiving'.format(run.name)
+            if bk._get_run_type(run.name)=='NovaSeqXPlus':
+                run.flag = '{}.archiving'.format(os.path.join(novaseqxplus_arch_path, run.name))
+            else:
+                run.flag = '{}.archiving'.format(run.name)
             run.dst_key_encrypted = os.path.join(bk.keys_path, run.key_encrypted)
             if run.path not in bk.archive_dirs.values():
                 logger.error(('Given run is not in one of the archive directories {}. Kindly move the run {} to appropriate '
@@ -314,7 +327,11 @@ class backup_utils(object):
                 continue
             with filesystem.chdir(run.path):
                 #skip run if being encrypted
-                if os.path.exists('{}.encrypting'.format(run.name)):
+                if bk._get_run_type(run.name)=='NovaSeqXPlus':
+                    encrypt_flag_path = '{}.encrypting'.format(os.path.join(novaseqxplus_arch_path, run.name))
+                else:
+                    encrypt_flag_path = '{}.encrypting'.format(run.name)
+                if os.path.exists(encrypt_flag_path):
                     logger.warn('Run {} is currently being encrypted, so skipping now'.format(run.name))
                     continue
                 # skip run if already ongoing

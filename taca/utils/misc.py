@@ -192,6 +192,8 @@ def run_is_demuxed(run, couch_info=None):
     run_terms = run.split('_')
     run_date = run_terms[0]
     run_fc = run_terms[-1]
+    if len(run_date)>6:
+        run_date = run_date[2:]
     run_name = '{}_{}'.format(run_date, run_fc)
     try:
         couch_connection = statusdb.StatusdbSession(couch_info).connection
