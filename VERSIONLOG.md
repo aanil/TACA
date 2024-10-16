@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241016.1
+
+Switch to tarball and skip compression
+
 ## 20241007.1
 
 Update taca-ngi-pipeline repo URL in README
