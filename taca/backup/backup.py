@@ -300,11 +300,11 @@ class backup_utils:
                 archive_ready = True
             # Case for putting data to PDC
             # Run has already been encrypted (run.tar.gpg exists)
-        elif ext == ".tar.gpg" and os.path.exists(run.tar_encrypted):
-            logger.info(
-                f"Sequencing has finished and copying completed for run {os.path.basename(run_path)} and is ready for sending to PDC"
-            )
-            archive_ready = True
+            elif ext == ".tar.gpg" and os.path.exists(run.tar_encrypted):
+                logger.info(
+                    f"Sequencing has finished and copying completed for run {os.path.basename(run_path)} and is ready for sending to PDC"
+                )
+                archive_ready = True
 
         return archive_ready
 
