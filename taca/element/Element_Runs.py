@@ -650,7 +650,7 @@ class Run:
     def start_demux(self, run_manifest, demux_dir):
         with chdir(self.run_dir):
             cmd = self.generate_demux_command(run_manifest, demux_dir)
-            stderr_abspath = f"{self.run_dir}/bases2fastq_stderr.txt" #TODO: individual files for each sub-demux
+            stderr_abspath = f"{self.run_dir}/bases2fastq_stderr.txt"  # TODO: individual files for each sub-demux
             try:
                 with open(stderr_abspath, "w") as stderr:
                     process = subprocess.Popen(
@@ -973,11 +973,23 @@ class Run:
                         if lane == phix_record["Lane"]:
                             idx1_shorter_len = min(len(idx1), len(phix_record["I1"]))
                             idx2_shorter_len = min(len(idx2), len(phix_record["I2"]))
-                            if idx1[:idx1_shorter_len] == phix_record["I1"][:idx1_shorter_len] and idx2[:idx2_shorter_len] == phix_record["I2"][:idx2_shorter_len]:
+                            if (
+                                idx1[:idx1_shorter_len]
+                                == phix_record["I1"][:idx1_shorter_len]
+                                and idx2[:idx2_shorter_len]
+                                == phix_record["I2"][:idx2_shorter_len]
+                            ):
                                 found_flag = True
                                 # When the new record has a longer index combination length, take the new record and remove the old one
                                 # When the index combination length happen to be the same, keep the one with the higher polonies assigned
-                                if len(idx1)+len(idx2) > len(phix_record["I1"])+len(phix_record["I2"]) or (len(idx1)+len(idx2) == len(phix_record["I1"])+len(phix_record["I2"]) and num_polonies_assigned >= phix_record["NumPoloniesAssigned"]):
+                                if len(idx1) + len(idx2) > len(phix_record["I1"]) + len(
+                                    phix_record["I2"]
+                                ) or (
+                                    len(idx1) + len(idx2)
+                                    == len(phix_record["I1"]) + len(phix_record["I2"])
+                                    and num_polonies_assigned
+                                    >= phix_record["NumPoloniesAssigned"]
+                                ):
                                     phix_filtered.remove(phix_record)
                                     phix_filtered.append(sample)
                     if not found_flag:
@@ -1218,7 +1230,7 @@ class Run:
         dest = os.path.join(metadata_archive, self.NGI_run_id)
         if not os.path.exists(dest):
             os.makedirs(dest)
-        for f in files_to_copy: # UnassignedSequences.csv missing in NoIndex case
+        for f in files_to_copy:  # UnassignedSequences.csv missing in NoIndex case
             if os.path.exists(f):
                 shutil.copy(f, dest)
             else:
