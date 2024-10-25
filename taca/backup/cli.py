@@ -17,7 +17,7 @@ def backup(ctx):
     "-r",
     "--run",
     type=click.Path(exists=True),
-    help="A run (directory or a zipped archive) to be encrypted",
+    help="A run (directory or a tar archive) to be encrypted",
 )
 @click.option(
     "-f",

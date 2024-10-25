@@ -20,13 +20,13 @@ class TestRunVars(unittest.TestCase):
             "data/nas/miseq.lab/190201_A00621_0032_BHHFCFDSXX"
         )
         self.assertEqual(run_variables.name, "190201_A00621_0032_BHHFCFDSXX")
-        self.assertEqual(run_variables.zip, "190201_A00621_0032_BHHFCFDSXX.tar.gz")
+        self.assertEqual(run_variables.zip, "190201_A00621_0032_BHHFCFDSXX.tar")
         self.assertEqual(run_variables.key, "190201_A00621_0032_BHHFCFDSXX.key")
         self.assertEqual(
             run_variables.key_encrypted, "190201_A00621_0032_BHHFCFDSXX.key.gpg"
         )
         self.assertEqual(
-            run_variables.zip_encrypted, "190201_A00621_0032_BHHFCFDSXX.tar.gz.gpg"
+            run_variables.zip_encrypted, "190201_A00621_0032_BHHFCFDSXX.tar.gpg"
         )
 
 
@@ -60,7 +60,7 @@ class TestBackupUtils(unittest.TestCase):
     def test_collect_runs(self):
         """Get backup runs from archive directories."""
         backup_object = backup.backup_utils()
-        backup_object.collect_runs(ext=".tar.gz", filter_by_ext=True)
+        backup_object.collect_runs(ext=".tar", filter_by_ext=True)
         run = backup_object.runs[0].name
         self.assertEqual(run, "200201_A00621_0032_BHHFCFDSXY")
 

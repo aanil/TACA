@@ -1,16 +1,11 @@
 # TACA Version Log
+## 20241025.1
+
+Add support for processing Element Aviti data
 
 ## 20241016.1
 
-Fix wrong logic for collecting unassigned indexes
-
-## 20241011.1
-
-Fix issue with 0 lane number; Add percentage of unassigned in total unassigned per lane
-
-## 20241008.1
-
-Add support for processing Element Aviti data
+Switch to tarball and skip compression
 
 ## 20241007.1
 
