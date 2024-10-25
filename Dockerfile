@@ -1,4 +1,4 @@
-FROM python:3.10 AS base
+FROM python:3.11.5 AS base
 
 # Update pip to latest version
 RUN python -m pip install --upgrade pip
@@ -23,7 +23,6 @@ COPY requirements-dev.txt requirements-dev.txt
 RUN python -m pip install -r requirements-dev.txt
 
 RUN mkdir /root/.taca/
-COPY tests/data/taca_test_cfg.yaml /root/.taca/taca.yaml
 
 FROM base AS testing
 COPY . /taca

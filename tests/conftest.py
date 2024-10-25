@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import tempfile
@@ -14,17 +15,19 @@ def create_dirs():
         │   ├── Chromium_10X_indexes.txt
         │   └── Smart-seq3_v1.5.csv
         ├── log
-        │   ├── transfer_minion_qc.tsv
+        │   ├── taca.log
+        │   ├── transfer.tsv
+        │   ├── transfer_aviti.tsv
         │   ├── transfer_minion.tsv
+        │   ├── transfer_minion_qc.tsv
         │   └── transfer_promethion.tsv
-        │   └── transfer.tsv
-        │   └── taca.log
         ├── miarka
         │   ├── minion
         │   │   └── qc
         │   └── promethion
         ├── minknow_reports
         ├── ngi-nas-ns
+        │   ├── Aviti_data
         │   ├── NextSeq_data
         │   ├── NovaSeqXPlus_data
         │   ├── NovaSeq_data
@@ -32,10 +35,13 @@ def create_dirs():
         │   ├── miseq_data
         │   ├── promethion_data
         │   └── samplesheets
+        │       ├── Aviti
         │       ├── NovaSeqXPlus
         │       └── anglerfish
         └── ngi_data
             └── sequencing
+                ├── AV242106
+                │   └── nosync
                 ├── MiSeq
                 │   └── nosync
                 ├── NextSeq
@@ -65,6 +71,8 @@ def create_dirs():
     os.makedirs(f"{tmp.name}/ngi_data/sequencing/promethion/nosync")
     os.makedirs(f"{tmp.name}/ngi_data/sequencing/minion/nosync")
     os.makedirs(f"{tmp.name}/ngi_data/sequencing/minion/qc/nosync")
+    ## Element
+    os.makedirs(f"{tmp.name}/ngi_data/sequencing/AV242106/nosync")
 
     # Sequencing metadata
     ## Illumina
@@ -75,10 +83,13 @@ def create_dirs():
     ## ONT
     os.makedirs(f"{tmp.name}/ngi-nas-ns/promethion_data")
     os.makedirs(f"{tmp.name}/ngi-nas-ns/minion_data")
+    ## Element
+    os.makedirs(f"{tmp.name}/ngi-nas-ns/Aviti_data")
 
     # Samplesheets
     os.makedirs(f"{tmp.name}/ngi-nas-ns/samplesheets/anglerfish")
     os.makedirs(f"{tmp.name}/ngi-nas-ns/samplesheets/NovaSeqXPlus")
+    os.makedirs(f"{tmp.name}/ngi-nas-ns/samplesheets/Aviti")
 
     # Misc. ONT dirs/files
     os.makedirs(f"{tmp.name}/minknow_reports")
@@ -86,6 +97,7 @@ def create_dirs():
     open(f"{tmp.name}/log/transfer_promethion.tsv", "w").close()
     open(f"{tmp.name}/log/transfer_minion.tsv", "w").close()
     open(f"{tmp.name}/log/transfer_minion_qc.tsv", "w").close()
+    open(f"{tmp.name}/log/transfer_aviti.tsv", "w").close()
     open(f"{tmp.name}/log/transfer.tsv", "w").close()
     open(f"{tmp.name}/log/taca.log", "w").close()
 
@@ -104,3 +116,46 @@ def create_dirs():
     yield tmp
 
     tmp.cleanup()
+
+
+@pytest.fixture(autouse=True)
+def configure_logging(create_dirs):
+    """Configure logging for the entire test session."""
+
+    # Use fixture
+    tmp = create_dirs
+
+    # Specify log file path
+    log_file = os.path.join(tmp.name, "log", "taca.log")
+    assert os.path.exists(log_file)
+
+    # Get the root logger
+    logger = logging.getLogger()
+
+    # Clear any existing handlers to avoid duplicate logs
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # Configure logging
+    file_handler = logging.FileHandler(log_file)
+    stream_handler = logging.StreamHandler()
+
+    # Set a common formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+
+    # Add handlers to the root logger
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+    # Set log level
+    logger.setLevel(logging.INFO)
+
+    # Log to confirm the logger is working
+    logger.info(f"Logging is set up. Logs will be stored in {log_file}.")
+
+    # Return the log file path to use in tests if needed
+    return log_file
