@@ -120,8 +120,8 @@ def run_preprocessing(given_run):
                 run.status = "transferred"
                 if run.status_changed():
                     run.update_statusdb()
-                run.archive()
-                run.status = "archived"
+                run.move_to_nosync()
+                run.status = "processed"
 
                 if run.status_changed():
                     run.update_statusdb()

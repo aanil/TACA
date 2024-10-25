@@ -1293,7 +1293,7 @@ class Run:
         )
         self.run_uploaded_file = os.path.join(self.run_dir, "RunUploaded.json")
 
-    def archive(self):
+    def move_to_nosync(self):
         """Move directory to nosync."""
         src = self.run_dir
         parent_dir = Path(self.run_dir).parent.absolute()
