@@ -1317,6 +1317,14 @@ class Run:
                     "Recipe",
                     "Operator",
                     "Sample_Project",
+                    "[Settings]",
+                    "OverrideCycles",
+                    "MinimumTrimmedReadLength",
+                    "MaskShortReads",
+                    "CreateFastqForIndexReads",
+                    "BarcodeMismatchesIndex1",
+                    "BarcodeMismatchesIndex2",
+                    "TrimUMI",
                 ]
                 with open(samplesheet) as sub_samplesheet_file:
                     sub_samplesheet_reader = csv.reader(sub_samplesheet_file)
