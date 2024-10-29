@@ -12,7 +12,7 @@ def get_config(tmp: tempfile.TemporaryDirectory) -> dict:
     config = {
         "element_analysis": {
             "Element": {
-                "Aviti": {
+                "GenericElement": {
                     "manifest_zip_location": f"{tmp.name}/ngi-nas-ns/samplesheets/Aviti",
                     "transfer_log": f"{tmp.name}/log/transfer_aviti.tsv",
                 },
@@ -41,6 +41,7 @@ def create_element_run_dir(
     rsync_ongoing: bool = False,
     rsync_exit_status: int | None = None,
     nosync: bool = False,
+    in_transfer_log: bool = False,
 ) -> str:
     """
     Build a run dir for an Element run for test purposes.
@@ -87,7 +88,8 @@ def create_element_run_dir(
         with open(csv_path, "w") as stream:
             # This run manifest was generated after the sequencing run,
             #  and is different from what it's file name implies.
-            stream.write("""[RUNVALUES]
+            stream.write(
+                """[RUNVALUES]
 KeyName, Value
 lims_step_name, Load to Flowcell (AVITI) v1.0
 lims_step_id, 24-1061411
@@ -138,7 +140,8 @@ PhiX_Adept,ATGTCGCTAG,CTAGCTCGTA,2,Control,0-0,,
 PhiX_Adept,CACAGATCGT,ACGAGAGTCT,2,Control,0-0,,
 PhiX_Adept,GCACATAGTC,GACTACTAGC,2,Control,0-0,,
 PhiX_Adept,TGTGTCGACA,TGTCTGACAG,2,Control,0-0,,
-""")
+"""
+            )
 
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             # Add the CSV file to the zip file
@@ -148,7 +151,8 @@ PhiX_Adept,TGTGTCGACA,TGTCTGACAG,2,Control,0-0,,
     # Populate run dir with files and folders
     if metadata_files:
         with open(f"{run_path}/RunManifest.json", "w") as stream:
-            stream.write("""{
+            stream.write(
+                """{
     "KitConfiguration": {
         "MaxCycles": 334,
         "DefaultR1Cycles": 151,
@@ -339,9 +343,11 @@ PhiX_Adept,TGTGTCGACA,TGTCTGACAG,2,Control,0-0,,
         }
     ]
 }
-""")
+"""
+            )
         with open(f"{run_path}/RunParameters.json", "w") as stream:
-            stream.write("""{
+            stream.write(
+                """{
   "FileVersion": "5.0.0",
   "RunName": "A2349523513",
   "RecipeExecutionID": "rec.9590c80c95fc4eee8b3eb10c31251915",
@@ -408,7 +414,8 @@ PhiX_Adept,TGTGTCGACA,TGTCTGACAG,2,Control,0-0,,
     "PolonyDensity": "HighDensity"
   }
 }
-""")
+"""
+            )
 
     if run_finished:
         with open(f"{run_path}/RunUploaded.json", "w") as stream:
@@ -427,6 +434,11 @@ PhiX_Adept,TGTGTCGACA,TGTCTGACAG,2,Control,0-0,,
 
     if rsync_ongoing:
         open(f"{run_path}/.rsync_ongoing", "w").close()
+
+    with open(f"{tmp.name}/log/transfer_aviti.tsv", "w") as stream:
+        if in_transfer_log:
+            stream.write(f"{run_name}\t2024-10-27\t10:55:02.784912\n")
+        stream.write("20190119_AV11123_B11111\t2019-01-19\t09:15:17.5121141\n")
 
     if rsync_exit_status is not None:
         with open(f"{run_path}/.rsync_exit_status", "w") as stream:
@@ -544,3 +556,93 @@ class TestRun:
             run.start_demux("mock_run_manifest", "mock_demux_dir")
             mock_command.assert_called_once_with("mock_run_manifest", "mock_demux_dir")
             mock_Popen.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "p",
+        [
+            {
+                "rsync_ongoing": False,
+                "rsync_exit_status": None,
+                "in_transfer_log": False,
+                "expected": "not started",
+            },
+            {
+                "rsync_ongoing": True,
+                "rsync_exit_status": None,
+                "in_transfer_log": False,
+                "expected": "ongoing",
+            },
+            {
+                "rsync_ongoing": False,
+                "rsync_exit_status": 0,
+                "in_transfer_log": False,
+                "expected": "rsync done",
+            },
+            {
+                "rsync_ongoing": False,
+                "rsync_exit_status": 0,
+                "in_transfer_log": True,
+                "expected": "rsync done",  # This one should do more, indicate that transfer is started as well.
+            },
+            {
+                "rsync_ongoing": False,
+                "rsync_exit_status": 1,
+                "in_transfer_log": False,
+                "expected": "rsync failed",
+            },
+            {
+                "rsync_ongoing": False,
+                "rsync_exit_status": 1,
+                "in_transfer_log": True,
+                "expected": "rsync failed",
+            },
+        ],
+        ids=[
+            "not started",
+            "rsync ongoing",
+            "rsync done",
+            "rsync done in log",
+            "rsync failed",
+            "rsync failed in log",
+        ],
+    )
+    def test_get_transfer_status(
+        self, mock_db, p: pytest.fixture, create_dirs: pytest.fixture
+    ):
+        tmp: tempfile.TemporaryDirectory = create_dirs
+
+        run = to_test.Run(
+            create_element_run_dir(
+                tmp,
+                metadata_files=True,
+                run_finished=True,
+                outcome_completed=True,
+                demux_done=True,
+                rsync_ongoing=True,
+                rsync_exit_status=0,
+                in_transfer_log=True,
+            ),
+            get_config(tmp),
+        )
+        run.parse_run_parameters()
+        assert run.get_transfer_status() == "rsync done"
+
+    def test_in_transfer_log(self, mock_db, create_dirs: pytest.fixture):
+        tmp: tempfile.TemporaryDirectory = create_dirs
+
+        run = to_test.Run(
+            create_element_run_dir(
+                tmp,
+                metadata_files=True,
+                run_finished=True,
+                outcome_completed=True,
+                demux_done=True,
+                rsync_ongoing=False,
+                rsync_exit_status=0,
+                in_transfer_log=True,
+            ),
+            get_config(tmp),
+        )
+
+        run.parse_run_parameters()
+        assert run.in_transfer_log() is True
