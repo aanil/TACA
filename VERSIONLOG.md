@@ -1,4 +1,9 @@
 # TACA Version Log
+
+## 20241029.1
+
+Fix small bug with Aviti transfer log
+
 ## 20241025.1
 
 Add support for processing Element Aviti data
