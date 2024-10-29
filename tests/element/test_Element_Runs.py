@@ -582,7 +582,7 @@ class TestRun:
                 "rsync_ongoing": False,
                 "rsync_exit_status": 0,
                 "in_transfer_log": True,
-                "expected": "rsync done",  # This one should do more, indicate that transfer is started as well.
+                "expected": "transferred",  # This one should do more, indicate that transfer is started as well.
             },
             {
                 "rsync_ongoing": False,
@@ -594,7 +594,7 @@ class TestRun:
                 "rsync_ongoing": False,
                 "rsync_exit_status": 1,
                 "in_transfer_log": True,
-                "expected": "rsync failed",
+                "expected": "transferred",
             },
         ],
         ids=[
@@ -618,16 +618,31 @@ class TestRun:
                 run_finished=True,
                 outcome_completed=True,
                 demux_done=True,
-                rsync_ongoing=True,
-                rsync_exit_status=0,
-                in_transfer_log=True,
+                rsync_ongoing=p["rsync_ongoing"],
+                rsync_exit_status=p["rsync_exit_status"],
+                in_transfer_log=p["in_transfer_log"],
             ),
             get_config(tmp),
         )
         run.parse_run_parameters()
-        assert run.get_transfer_status() == "rsync done"
+        assert run.get_transfer_status() == p["expected"]
 
-    def test_in_transfer_log(self, mock_db, create_dirs: pytest.fixture):
+    @pytest.mark.parametrize(
+        "p",
+        [
+            {
+                "in_transfer_log": False,
+                "expected": False,
+            },
+            {
+                "in_transfer_log": True,
+                "expected": True,
+            },
+        ],
+    )
+    def test_in_transfer_log(
+        self, mock_db, p: pytest.fixture, create_dirs: pytest.fixture
+    ):
         tmp: tempfile.TemporaryDirectory = create_dirs
 
         run = to_test.Run(
@@ -639,10 +654,10 @@ class TestRun:
                 demux_done=True,
                 rsync_ongoing=False,
                 rsync_exit_status=0,
-                in_transfer_log=True,
+                in_transfer_log=p["in_transfer_log"],
             ),
             get_config(tmp),
         )
 
         run.parse_run_parameters()
-        assert run.in_transfer_log() is True
+        assert run.in_transfer_log() is p["expected"]
