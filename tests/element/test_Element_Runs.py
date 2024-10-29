@@ -16,6 +16,10 @@ def get_config(tmp: tempfile.TemporaryDirectory) -> dict:
                     "manifest_zip_location": f"{tmp.name}/ngi-nas-ns/samplesheets/Aviti",
                     "transfer_log": f"{tmp.name}/log/transfer_aviti.tsv",
                 },
+                "Aviti": {
+                    "manifest_zip_location": f"{tmp.name}/ngi-nas-ns/samplesheets/Aviti",
+                    "transfer_log": f"{tmp.name}/log/transfer_aviti.tsv",
+                },
             },
             "bases2fastq": "mock_bases2fastq_path",
         },
