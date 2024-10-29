@@ -106,7 +106,7 @@ class NovaSeqXPlus_Run(Standard_Run):
                             noindex_flag = True
                         if field == "index2" and noindex_flag:
                             line[field] = (
-                                "A" * index_cycles[1] if index_cycles[1] != 0 else ""
+                                "T" * index_cycles[1] if index_cycles[1] != 0 else ""
                             )
                             noindex_flag = False
                         # Case of IDT UMI
