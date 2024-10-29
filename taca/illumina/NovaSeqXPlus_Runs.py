@@ -105,17 +105,22 @@ class NovaSeqXPlus_Run(Standard_Run):
                             )
                             noindex_flag = True
                         if field == "index2" and noindex_flag:
-                            line[field] = (
-                                "T" * index_cycles[1] if index_cycles[1] != 0 else ""
-                            )
+                            if software == "bclconvert":
+                                line[field] = (
+                                    "T" * index_cycles[1] if index_cycles[1] != 0 else ""
+                                )
+                            else:
+                                line[field] = (
+                                    "A" * index_cycles[1] if index_cycles[1] != 0 else ""
+                                )
                             noindex_flag = False
                         # Case of IDT UMI
                         if (
                             field == "index" or field == "index2"
                         ) and IDT_UMI_PAT.findall(line[field]):
                             line[field] = line[field].replace("N", "")
-                        # Convert Index 2 into RC for NovaSeqXPlus
-                        if field == "index2":
+                        # Convert Index 2 into RC for NovaSeqXPlus for BCL Convert
+                        if field == "index2" and software == "bclconvert":
                             line[field] = self._revcomp(line[field])
                         line_ar.append(line[field])
                     output += ",".join(line_ar)
