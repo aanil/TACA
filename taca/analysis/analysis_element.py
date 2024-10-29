@@ -114,29 +114,31 @@ def run_preprocessing(given_run):
             )  # TODO: fix formatting, currently prints "ElementRun(20240910_AV242106_B2403418431) is being transferred"
             return
         elif transfer_status == "rsync done":
-            if run.rsync_successful():
-                run.remove_transfer_indicator()
-                run.update_transfer_log()
-                run.status = "transferred"
-                if run.status_changed():
-                    run.update_statusdb()
-                run.move_to_nosync()
-                run.status = "processed"
+            run.remove_transfer_indicator()
+            run.update_transfer_log()
+            run.status = "transferred"
+            if run.status_changed():
+                run.update_statusdb()
+            run.move_to_nosync()
+            run.status = "processed"
 
-                if run.status_changed():
-                    run.update_statusdb()
-            else:
-                run.status = "transfer failed"
-                logger.warning(
-                    f"An issue occurred while transfering {run} to the analysis cluster."
-                )
-                email_subject = f"Issues processing {run}"
-                email_message = f"An issue occurred while transfering {run} to the analysis cluster."
-                send_mail(email_subject, email_message, CONFIG["mail"]["recipients"])
+            if run.status_changed():
+                run.update_statusdb()
+            return
+        elif transfer_status == "rsync failed":
+            run.status = "transfer failed"
+            logger.warning(
+                f"An issue occurred while transfering {run} to the analysis cluster."
+            )
+            email_subject = f"Issues processing {run}"
+            email_message = (
+                f"An issue occurred while transfering {run} to the analysis cluster."
+            )
+            send_mail(email_subject, email_message, CONFIG["mail"]["recipients"])
             return
         else:
             logger.warning(
-                f"Unknown transfer status {transfer_status} of run {run}, please investigate."
+                f"Unexpected transfer status {transfer_status} of run {run}, please investigate."
             )
             email_subject = f"Issues processing {run}"
             email_message = f"Unknown transfer status {transfer_status} of run {run}, please investigate."
@@ -155,9 +157,17 @@ def run_preprocessing(given_run):
                 runObj = Aviti_Run(run, CONFIG)
                 try:
                     _process(runObj)
-                except:
-                    # This function might throw and exception,
+                except Exception as e:
+                    # This function might throw an exception,
                     # it is better to continue processing other runs
-                    logger.warning(f"There was an error processing the run {run}")
-                    # TODO: Think about how to avoid silent errors (email?)
+                    email_subject = f"Issues processing {run}"
+                    email_message = (
+                        f"An error occurred while processing {run}. Error: {e}"
+                    )
+                    send_mail(
+                        email_subject, email_message, CONFIG["mail"]["recipients"]
+                    )
+                    logger.warning(
+                        f"There was an error processing the run {run}. Error: {e}"
+                    )
                     pass
