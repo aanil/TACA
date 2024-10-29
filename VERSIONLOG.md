@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241029.2
+
+Fix issue that index 2 is automatically converted to RC by BCL Convert
+
 ## 20241029.1
 
 Fix small bug with Aviti transfer log
