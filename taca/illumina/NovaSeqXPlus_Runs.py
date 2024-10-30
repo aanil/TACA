@@ -56,7 +56,7 @@ class NovaSeqXPlus_Run(Standard_Run):
         # Settings for BCL Convert
         if software == "bclconvert":
             output += f"[Settings]{os.linesep}"
-            # For NovaSeqXPlus, the orders of index 2 masks also need to be reversed
+            # For NextSeq, NovaSeq and NovaSeqXPlus, the orders of index 2 masks also need to be reversed
             if len(base_mask) == 4 or (len(base_mask) == 3 and "Y" not in base_mask[2]):
                 base_mask[2] = "".join(re.findall(r"[A-Z]\d+", base_mask[2])[::-1])
             output += "OverrideCycles,{}{}".format(";".join(base_mask), os.linesep)
@@ -126,7 +126,7 @@ class NovaSeqXPlus_Run(Standard_Run):
                             field == "index" or field == "index2"
                         ) and IDT_UMI_PAT.findall(line[field]):
                             line[field] = line[field].replace("N", "")
-                        # Convert Index 2 into RC for NovaSeqXPlus for BCL Convert
+                        # Convert Index 2 into RC for NextSeq, NovaSeq and NovaSeqXPlus for BCL Convert
                         if field == "index2" and software == "bclconvert":
                             line[field] = self._revcomp(line[field])
                         line_ar.append(line[field])
