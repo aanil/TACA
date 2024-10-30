@@ -56,6 +56,9 @@ class NovaSeqXPlus_Run(Standard_Run):
         # Settings for BCL Convert
         if software == "bclconvert":
             output += f"[Settings]{os.linesep}"
+            # For NovaSeqXPlus, the orders of index 2 masks also need to be reversed
+            if len(base_mask) == 4 or (len(base_mask) == 3 and "Y" not in base_mask[2]):
+                base_mask[2] = "".join(re.findall(r"[A-Z]\d+", base_mask[2])[::-1])
             output += "OverrideCycles,{}{}".format(";".join(base_mask), os.linesep)
             if any("U" in bm for bm in base_mask):
                 output += f"TrimUMI,0{os.linesep}"
