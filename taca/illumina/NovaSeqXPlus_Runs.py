@@ -83,12 +83,6 @@ class NovaSeqXPlus_Run(Standard_Run):
                                     or "BarcodeMismatchesIndex" not in k
                                 ):
                                     output += f"{k},{v}{os.linesep}"
-                    # Allow 0 mismatch for all indexes that are shorter than 8nt
-                    else:
-                        if index1_size != 0 and index1_size < 8:
-                            output += f"BarcodeMismatchesIndex1,0{os.linesep}"
-                        if index2_size != 0 and index2_size < 8:
-                            output += f"BarcodeMismatchesIndex2,0{os.linesep}"
         # Data
         output += f"[Data]{os.linesep}"
         datafields = []
