@@ -703,6 +703,32 @@ class Run:
                 os.unlink(dest)
         os.symlink(source, dest)
 
+        # Replace the file laneBarcode.html
+        source_html_report_laneBarcode = os.path.join(
+            source, "html", self.flowcell_id, "all", "all", "all", "laneBarcode.html"
+        )
+        dest_html_report_laneBarcode = os.path.join(
+            dest, "html", self.flowcell_id, "all", "all", "all", "laneBarcode.html"
+        )
+        if os.path.exists(source_html_report_laneBarcode) and os.path.exists(
+            dest_html_report_laneBarcode
+        ):
+            os.remove(dest_html_report_laneBarcode)
+            html_report_laneBarcode_parser = LaneBarcodeParser(
+                source_html_report_laneBarcode
+            )
+            # Remove the trailing "_SX" postfix from samples names for BCL Convert when it handles SmartSeq3 libraries
+            for entry in html_report_laneBarcode_parser.sample_data:
+                if "_S" in entry["Sample"]:
+                    entry["Sample"] = "_".join(entry["Sample"].split("_")[:2])
+            html_report_laneBarcode_parser.sample_data = sorted(
+                html_report_laneBarcode_parser.sample_data,
+                key=lambda k: (k["Lane"].lower(), k["Sample"]),
+            )
+            _generate_lane_html(
+                dest_html_report_laneBarcode, html_report_laneBarcode_parser
+            )
+
     def _fix_html_reports_for_complex_lanes(
         self,
         demux_folder,
