@@ -713,7 +713,6 @@ class Run:
         if os.path.exists(source_html_report_laneBarcode) and os.path.exists(
             dest_html_report_laneBarcode
         ):
-            os.remove(dest_html_report_laneBarcode)
             html_report_laneBarcode_parser = LaneBarcodeParser(
                 source_html_report_laneBarcode
             )
