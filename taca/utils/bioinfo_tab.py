@@ -67,6 +67,7 @@ def update_statusdb(run_dir, inst_brand):
     elif inst_brand == "element":
         aviti_run = Aviti_Run(run_dir, CONFIG)
         aviti_run.parse_run_parameters()
+        run_id = aviti_run.NGI_run_id
 
     statusdb_conf = CONFIG.get("statusdb")
     couch_connection = statusdb.StatusdbSession(statusdb_conf).connection
