@@ -306,7 +306,7 @@ class Run:
             with open(self.final_sequencing_file) as json_file:
                 sequencing_outcome = json.load(json_file).get("outcome")
             if sequencing_outcome != "OutcomeCompleted":
-                return False
+                return False # TODO: throw an exception if the sequencing outcome is OutcomeFailed
             else:
                 return True
         else:
