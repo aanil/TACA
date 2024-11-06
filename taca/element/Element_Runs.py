@@ -681,13 +681,18 @@ class Run:
         elif self.transfer_ongoing() and not self.rsync_complete():
             return "ongoing"
         elif self.rsync_complete() and not self.in_transfer_log():
-            return "rsync done"
+            if self.rsync_successful():
+                return "rsync done"
+            else:
+                return "rsync failed"
         elif self.in_transfer_log():
+            return "transferred"
+        else:
             return "unknown"
 
     def in_transfer_log(self):
         with open(self.transfer_file) as transfer_file:
-            for row in transfer_file.read():
+            for row in transfer_file.readlines():
                 if self.NGI_run_id in row:
                     return True
         return False

@@ -1,16 +1,28 @@
 # TACA Version Log
 
-## 20241016.1
+## 20241029.3
 
-Fix wrong logic for collecting unassigned indexes
+Fix missing settings for BCL Convert
 
-## 20241011.1
+## 20241029.2
 
-Fix issue with 0 lane number; Add percentage of unassigned in total unassigned per lane
+Fix issue that index 2 is automatically converted to RC by BCL Convert
 
-## 20241008.1
+## 20241029.1
+
+Fix small bug with Aviti transfer log
+
+## 20241025.1
 
 Add support for processing Element Aviti data
+
+## 20241024.1
+
+Fix TACA for handling 10X UMI cases by BCL Convert
+
+## 20241016.1
+
+Switch to tarball and skip compression
 
 ## 20241007.1
 

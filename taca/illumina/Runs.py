@@ -853,6 +853,11 @@ class Run:
                 ):
                     html_report_laneBarcode_parser.sample_data.remove(entry)
 
+        # Remove the trailing "_SX" postfix from samples names for BCL Convert when it handles SmartSeq3 libraries
+        for entry in html_report_laneBarcode_parser.sample_data:
+            if "_S" in entry["Sample"]:
+                entry["Sample"] = "_".join(entry["Sample"].split("_")[:2])
+
         # Sort sample_data: first by lane then by sample ID
         html_report_laneBarcode_parser.sample_data = sorted(
             html_report_laneBarcode_parser.sample_data,
@@ -1317,6 +1322,14 @@ class Run:
                     "Recipe",
                     "Operator",
                     "Sample_Project",
+                    "[Settings]",
+                    "OverrideCycles",
+                    "MinimumTrimmedReadLength",
+                    "MaskShortReads",
+                    "CreateFastqForIndexReads",
+                    "BarcodeMismatchesIndex1",
+                    "BarcodeMismatchesIndex2",
+                    "TrimUMI",
                 ]
                 with open(samplesheet) as sub_samplesheet_file:
                     sub_samplesheet_reader = csv.reader(sub_samplesheet_file)
