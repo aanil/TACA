@@ -79,7 +79,9 @@ class backup_utils:
         else:
             for adir in self.archive_dirs.values():
                 if not os.path.isdir(adir):
-                    logger.warn(f"Path {adir} does not exist or it is not a directory")
+                    logger.warning(
+                        f"Path {adir} does not exist or it is not a directory"
+                    )
                     continue
                 for item in os.listdir(adir):
                     if filter_by_ext and not item.endswith(ext):
@@ -90,7 +92,9 @@ class backup_utils:
                         continue
                     if (
                         re.match(filesystem.RUN_RE, item)
-                        or re.match(filesystem.RUN_RE_ONT, item)
+                        or re.match(
+                            filesystem.RUN_RE_ONT, item
+                        )  # TODO: add aviti pattern
                     ) and item not in self.runs:
                         run_type = self._get_run_type(item)
                         archive_path = self.archive_dirs[run_type]
@@ -101,26 +105,24 @@ class backup_utils:
     def avail_disk_space(self, path, run):
         """Check the space on file system based on parent directory of the run."""
         # not able to fetch runtype use the max size as precaution, size units in GB
-        illumina_run_sizes = {
+        run_sizes = {
             "novaseq": 1800,
             "miseq": 20,
             "nextseq": 250,
             "NovaSeqXPlus": 3600,
             "promethion": 3000,
-            "minion": 1000,
+            "minion": 1000,  # TODO: add aviti
         }
-        required_size = illumina_run_sizes.get(self._get_run_type(run), 900) * 2
+        required_size = run_sizes.get(self._get_run_type(run), 900) * 2
         # check for any ongoing runs and add up the required size accrdingly
         for ddir in self.data_dirs.values():
             if not os.path.isdir(ddir):
                 continue
             for item in os.listdir(ddir):
-                if not re.match(filesystem.RUN_RE, item):
+                if not re.match(filesystem.RUN_RE, item):  # TODO: add ONT and aviti
                     continue
                 if not os.path.exists(os.path.join(ddir, item, "RTAComplete.txt")):
-                    required_size += illumina_run_sizes.get(
-                        self._get_run_type(run), 900
-                    )
+                    required_size += run_sizes.get(self._get_run_type(run), 900)
         # get available free space from the file system
         try:
             df_proc = sp.Popen(["df", path], stdout=sp.PIPE, stderr=sp.PIPE)
@@ -179,10 +181,10 @@ class backup_utils:
                 "^(\d{8})_(\d{4})_([1-3][A-H])_([0-9a-zA-Z]+)_([0-9a-zA-Z]+)$", run
             ):
                 run_type = "promethion"
-            else:
+            else:  # TODO: Add check for aviti
                 run_type = ""
         except:
-            logger.warn(f"Could not fetch run type for run {run}")
+            logger.warning(f"Could not fetch run type for run {run}")
         return run_type
 
     def _call_commands(
@@ -263,9 +265,11 @@ class backup_utils:
                 run_date = run_vals[0][2:]
             else:
                 run_date = run_vals[0]
-            run_fc = f"{run_date}_{run_vals[-1]}"
+            run_fc = f"{run_date}_{run_vals[-1]}"  # TODO: does this work for Aviti?
             couch_connection = statusdb.StatusdbSession(self.couch_info).connection
-            db = couch_connection[self.couch_info["db"]]
+            db = couch_connection[
+                self.couch_info["db"]
+            ]  # TODO: does this work for Aviti?
             fc_names = {e.key: e.id for e in db.view("names/name", reduce=False)}
             d_id = fc_names[run_fc]
             doc = db.get(d_id)
@@ -275,7 +279,7 @@ class backup_utils:
                 f'Logged "pdc_archived" timestamp for fc {run} in statusdb doc "{d_id}"'
             )
         except:
-            logger.warn(f'Not able to log "pdc_archived" timestamp for run {run}')
+            logger.warning(f'Not able to log "pdc_archived" timestamp for run {run}')
 
     def _is_ready_to_archive(self, run, ext):
         """Check if the run to be encrypted has finished sequencing and has been copied completely to nas"""
@@ -290,7 +294,7 @@ class backup_utils:
         ) or (
             self._get_run_type(run.name) in ["promethion", "minion"]
             and os.path.exists(os.path.join(run_path, ".sync_finished"))
-        ):
+        ):  # TODO: add Aviti case
             # Case for encrypting
             # Run has NOT been encrypted (run.tar.gpg not exists)
             if ext == ".tar" and (not os.path.exists(run.tar_encrypted)):
@@ -342,7 +346,7 @@ class backup_utils:
                 if not misc.run_is_demuxed(
                     run, bk.couch_info, bk._get_run_type(run.name)
                 ):
-                    logger.warn(
+                    logger.warning(
                         f"Run {run.name} is not demultiplexed yet, so skipping it"
                     )
                     continue
@@ -352,7 +356,7 @@ class backup_utils:
             with filesystem.chdir(run.path):
                 # skip run if already ongoing
                 if os.path.exists(run.flag):
-                    logger.warn(
+                    logger.warning(
                         f"Run {run.name} is already being encrypted, so skipping now"
                     )
                     continue
@@ -360,7 +364,7 @@ class backup_utils:
                 # Make run directory tarball
                 if os.path.exists(run.tar):
                     if os.path.isdir(run.name):
-                        logger.warn(
+                        logger.warning(
                             f"Both run source and archive tarball exist for run {run.name}, skipping run as precaution"
                         )
                         bk._clean_tmp_files([run.flag])
@@ -370,7 +374,9 @@ class backup_utils:
                     )
                 else:
                     exclude_files = " ".join(
-                        [f"--exclude {x}" for x in bk.exclude_list]
+                        [
+                            f"--exclude {x}" for x in bk.exclude_list
+                        ]  # TODO: files to exclude for aviti?
                     )
                     logger.info(f"Creating archive tarball for run {run.name}")
                     if bk._call_commands(
@@ -383,11 +389,11 @@ class backup_utils:
                             f"Run {run.name} was successfully tarballed and transferred to {run.tar}"
                         )
                     else:
-                        logger.warn(f"Skipping run {run.name} and moving on")
+                        logger.warning(f"Skipping run {run.name} and moving on")
                         continue
                 # Remove encrypted file if already exists
                 if os.path.exists(run.tar_encrypted):
-                    logger.warn(
+                    logger.warning(
                         f"Removing already existing encrypted file for run {run.name}, this is a precaution "
                         "to make sure the file was encrypted with correct key file"
                     )
@@ -403,7 +409,7 @@ class backup_utils:
                 if not bk._call_commands(
                     cmd1="gpg --gen-random 1 256", out_file=run.key, tmp_files=tmp_files
                 ):
-                    logger.warn(f"Skipping run {run.name} and moving on")
+                    logger.warning(f"Skipping run {run.name} and moving on")
                     continue
                 logger.info(f"Generated random phrase key for run {run.name}")
                 # Calculate md5 sum pre encryption
@@ -413,7 +419,7 @@ class backup_utils:
                         cmd1=f"md5sum {run.tar}", return_out=True, tmp_files=tmp_files
                     )
                     if not md5_call:
-                        logger.warn(f"Skipping run {run.name} and moving on")
+                        logger.warning(f"Skipping run {run.name} and moving on")
                         continue
                     md5_pre_encrypt = md5_out.split()[0]
                 # Encrypt the tar run file
@@ -425,7 +431,7 @@ class backup_utils:
                     ),
                     tmp_files=tmp_files,
                 ):
-                    logger.warn(f"Skipping run {run.name} and moving on")
+                    logger.warning(f"Skipping run {run.name} and moving on")
                     continue
                 # Decrypt and check for md5
                 if not force:
@@ -437,7 +443,7 @@ class backup_utils:
                         tmp_files=tmp_files,
                     )
                     if not md5_call:
-                        logger.warn(f"Skipping run {run.name} and moving on")
+                        logger.warning(f"Skipping run {run.name} and moving on")
                         continue
                     md5_post_encrypt = md5_out.split()[0]
                     if md5_pre_encrypt != md5_post_encrypt:
@@ -486,20 +492,20 @@ class backup_utils:
             with filesystem.chdir(run.path):
                 # skip run if being encrypted
                 if os.path.exists(f"{run.name}.encrypting"):
-                    logger.warn(
+                    logger.warning(
                         f"Run {run.name} is currently being encrypted, so skipping now"
                     )
                     continue
                 # skip run if already ongoing
                 if os.path.exists(run.flag):
-                    logger.warn(
+                    logger.warning(
                         f"Run {run.name} is already being archived, so skipping now"
                     )
                     continue
                 if bk.file_in_pdc(run.tar_encrypted, silent=False) or bk.file_in_pdc(
                     run.dst_key_encrypted, silent=False
                 ):
-                    logger.warn(
+                    logger.warning(
                         f"Seems like files related to run {run.name} already exist in PDC, check and cleanup"
                     )
                     continue
@@ -530,4 +536,4 @@ class backup_utils:
                             )
                             bk._move_run_to_archived(run)
                         continue
-                logger.warn(f"Sending file {run.tar_encrypted} to PDC failed")
+                logger.warning(f"Sending file {run.tar_encrypted} to PDC failed")

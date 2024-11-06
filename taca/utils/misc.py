@@ -193,6 +193,8 @@ def run_is_demuxed(run, couch_info=None, seq_run_type=None):
     For Illumina runs:
     Check in StatusDB 'x_flowcells' database if the given run has an entry which means it was
     demultiplexed (as TACA only creates a document upon successfull demultiplexing)
+    
+    # TODO: check aviti demux status
 
     :param dict couch_info: a dict with 'statusDB' info
     """
