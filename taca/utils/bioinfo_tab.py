@@ -29,8 +29,8 @@ def collect_runs():
     # Pattern explained:
     # 6-8Digits_(maybe ST-)AnythingLetterornumberNumber_Number_AorBLetterornumberordash
     illumina_rundir_re = re.compile("\d{6,8}_[ST-]*\w+\d+_\d+_[AB]?[A-Z0-9\-]+")
-    for inst_brand in CONFIG["bioinfo_tab"]:
-        for data_dir in CONFIG["bioinfo_tab"][inst_brand]["data_dirs"]:
+    for inst_brand in CONFIG["bioinfo_tab"]["data_dirs"]:
+        for data_dir in CONFIG["bioinfo_tab"]["data_dirs"][inst_brand]:
             if os.path.exists(data_dir):
                 potential_run_dirs = glob.glob(os.path.join(data_dir, "*"))
                 for run_dir in potential_run_dirs:
@@ -39,11 +39,11 @@ def collect_runs():
                             os.path.basename(os.path.abspath(run_dir))
                         ):
                             found_runs["illumina"].append(os.path.basename(run_dir))
-                            update_statusdb(run_dir, inst_brand)
                             logger.info(f"Working on {run_dir}")
+                            update_statusdb(run_dir, inst_brand)
                         elif inst_brand == "element":
-                            update_statusdb(run_dir, inst_brand)
                             logger.info(f"Working on {run_dir}")
+                            update_statusdb(run_dir, inst_brand)
 
                 nosync_data_dir = os.path.join(data_dir, "nosync")
                 potential_nosync_run_dirs = glob.glob(
@@ -85,6 +85,8 @@ def update_statusdb(run_dir, inst_brand):
         for flowcell in project_info:
             for lane in project_info[flowcell]:
                 for sample in project_info[flowcell][lane]:
+                    if "phix" in sample.lower():
+                        continue
                     for project in project_info[flowcell][lane][sample]:
                         if inst_brand == "illumina":
                             sample_status = get_status(run_dir)
@@ -98,6 +100,7 @@ def update_statusdb(run_dir, inst_brand):
                             "lane": lane,
                             "sample": sample,
                             "status": sample_status,
+                            "instrument_type": inst_brand,
                             "values": {
                                 valueskey: {
                                     "user": "taca",
@@ -210,11 +213,12 @@ def get_ss_projects_element(aviti_run):
     proj_tree = Tree()
     flowcell_id = aviti_run.flowcell_id
     assigned_indexes = aviti_run.read_index_assignement_file()
-    for sample_dict in assigned_indexes:
-        lane = sample_dict["Lane"]
-        sample_id = sample_dict["SampleName"]
-        project = sample_id.split("_")[0]
-        proj_tree[flowcell_id][lane][sample_id][project]
+    if assigned_indexes:
+        for sample_dict in assigned_indexes:
+            lane = sample_dict["Lane"]
+            sample_id = sample_dict["SampleName"]
+            project = sample_id.split("_")[0]
+            proj_tree[flowcell_id][lane][sample_id][project]
 
     if list(proj_tree.keys()) == []:
         logger.info(
