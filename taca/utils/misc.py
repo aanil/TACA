@@ -1,5 +1,6 @@
 """Miscellaneous or general-use methods."""
 
+import glob
 import hashlib
 import os
 import smtplib
@@ -193,7 +194,7 @@ def run_is_demuxed(run, couch_info=None, seq_run_type=None):
     For Illumina runs:
     Check in StatusDB 'x_flowcells' database if the given run has an entry which means it was
     demultiplexed (as TACA only creates a document upon successfull demultiplexing)
-    
+
     # TODO: check aviti demux status
 
     :param dict couch_info: a dict with 'statusDB' info
@@ -203,6 +204,21 @@ def run_is_demuxed(run, couch_info=None, seq_run_type=None):
             return True
         else:
             return False
+    elif seq_run_type == "aviti":
+        # TODO: look for *RunStats.json in demux dirs
+        sub_demux_dirs = glob.glob(os.path.join(run.abs_path, "Demultiplexing_*"))
+        finished_count = 0
+        for demux_dir in sub_demux_dirs:
+            found_demux_stats_file = glob.glob(
+                os.path.join(demux_dir, "*RunStats.json")
+            )
+            if not found_demux_stats_file:
+                return False
+            elif found_demux_stats_file:
+                finished_count += 1
+        if finished_count == len(sub_demux_dirs): # TODO: Does this work if there is no Demux dirs?
+            return True
+        return False
     else:
         if not couch_info:
             raise SystemExit(

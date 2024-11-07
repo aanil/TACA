@@ -48,7 +48,9 @@ class backup_utils:
             self.mail_recipients = CONFIG["mail"]["recipients"]
             self.check_demux = CONFIG.get("backup", {}).get("check_demux", False)
             self.couch_info = CONFIG.get("statusdb")
-            self.finished_run_indicator = CONFIG.get("storage", {}).get(
+            self.finished_run_indicator = CONFIG.get(
+                "storage", {}
+            ).get(  # TODO: breakout
                 "finished_run_indicator", "RTAComplete.txt"
             )
             self.copy_complete_indicator = CONFIG.get("storage", {}).get(
@@ -71,34 +73,34 @@ class backup_utils:
             if not (
                 re.match(filesystem.RUN_RE, run.name)
                 or re.match(filesystem.RUN_RE_ONT, run.name)
+                or re.match(filesystem.RUN_RE_ELEMENT, run.name)
             ):
                 logger.error(f"Given run {self.run} did not match a FC pattern")
                 raise SystemExit
             if self._is_ready_to_archive(run, ext):
                 self.runs.append(run)
         else:
-            for adir in self.archive_dirs.values():
-                if not os.path.isdir(adir):
+            for archive_dir in self.archive_dirs.values():
+                if not os.path.isdir(archive_dir):
                     logger.warning(
-                        f"Path {adir} does not exist or it is not a directory"
+                        f"Path {archive_dir} does not exist or it is not a directory"
                     )
                     continue
-                for item in os.listdir(adir):
+                for item in os.listdir(archive_dir):
                     if filter_by_ext and not item.endswith(ext):
                         continue
                     elif item.endswith(ext):
                         item = item.replace(ext, "")
-                    elif not os.path.isdir(os.path.join(adir, item)):
+                    elif not os.path.isdir(os.path.join(archive_dir, item)):
                         continue
                     if (
                         re.match(filesystem.RUN_RE, item)
-                        or re.match(
-                            filesystem.RUN_RE_ONT, item
-                        )  # TODO: add aviti pattern
+                        or re.match(filesystem.RUN_RE_ONT, item)
+                        or re.match(filesystem.RUN_RE_ELEMENT, item)
                     ) and item not in self.runs:
                         run_type = self._get_run_type(item)
                         archive_path = self.archive_dirs[run_type]
-                        run = run_vars(os.path.join(adir, item), archive_path)
+                        run = run_vars(os.path.join(archive_dir, item), archive_path)
                         if self._is_ready_to_archive(run, ext):
                             self.runs.append(run)
 
@@ -111,17 +113,30 @@ class backup_utils:
             "nextseq": 250,
             "NovaSeqXPlus": 3600,
             "promethion": 3000,
-            "minion": 1000,  # TODO: add aviti
+            "minion": 1000,
+            "aviti": 350,
         }
         required_size = run_sizes.get(self._get_run_type(run), 900) * 2
-        # check for any ongoing runs and add up the required size accrdingly
-        for ddir in self.data_dirs.values():
-            if not os.path.isdir(ddir):
+        # check for any ongoing runs and add up the required size accordingly
+        for data_dir in self.data_dirs.values():
+            if not os.path.isdir(data_dir):
                 continue
-            for item in os.listdir(ddir):
-                if not re.match(filesystem.RUN_RE, item):  # TODO: add ONT and aviti
+            for run_dir in os.listdir(data_dir):
+                if not (
+                    re.match(filesystem.RUN_RE, run_dir)
+                    or re.match(filesystem.RUN_RE_ONT, run_dir)
+                    or re.match(filesystem.RUN_RE_ELEMENT, run_dir)
+                ):
                     continue
-                if not os.path.exists(os.path.join(ddir, item, "RTAComplete.txt")):
+                if not (
+                    os.path.exists(os.path.join(data_dir, run_dir, "RTAComplete.txt")) # Illumina
+                    or os.path.exists(
+                        os.path.join(data_dir, run_dir, ".sync_finished") # ONT
+                    )
+                    or os.path.exists(
+                        os.path.join(data_dir, run_dir, "RunUploaded.json") # Element
+                    )
+                ):
                     required_size += run_sizes.get(self._get_run_type(run), 900)
         # get available free space from the file system
         try:
@@ -181,7 +196,9 @@ class backup_utils:
                 "^(\d{8})_(\d{4})_([1-3][A-H])_([0-9a-zA-Z]+)_([0-9a-zA-Z]+)$", run
             ):
                 run_type = "promethion"
-            else:  # TODO: Add check for aviti
+            elif "_AV" in run:
+                run_type = "aviti"
+            else:
                 run_type = ""
         except:
             logger.warning(f"Could not fetch run type for run {run}")
