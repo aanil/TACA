@@ -209,7 +209,6 @@ def get_status_element(aviti_run):
     """Gets status of a aviti sample run, based on flowcell info."""
     # Default state, should never occur
     status = "ERROR"
-    nosync_pattern = re.compile("nosync")
     demultiplexing_status = aviti_run.get_demultiplexing_status()
     sequencing_done = aviti_run.check_sequencing_status()
     transfer_status = aviti_run.get_transfer_status()
