@@ -38,10 +38,13 @@ def collect_runs():
                         if inst_brand == "illumina" and illumina_rundir_re.match(
                             os.path.basename(os.path.abspath(run_dir))
                         ):
-                            found_runs["illumina"].append(os.path.basename(run_dir))
+                            found_runs[inst_brand].append(os.path.basename(run_dir))
                             logger.info(f"Working on {run_dir}")
                             update_statusdb(run_dir, inst_brand)
                         elif inst_brand == "element":
+                            # Skip no sync dirs, they will be checked below
+                            if run_dir == os.path.join(data_dir, "nosync"):
+                                continue
                             logger.info(f"Working on {run_dir}")
                             update_statusdb(run_dir, inst_brand)
 
@@ -57,6 +60,9 @@ def collect_runs():
                                 os.path.basename(os.path.abspath(run_dir))
                             )
                         ) or inst_brand == "element":
+                            # Skip archived dirs
+                            if run_dir == os.path.join(nosync_data_dir, "archived"):
+                                continue
                             update_statusdb(run_dir, inst_brand)
 
 
@@ -65,9 +71,14 @@ def update_statusdb(run_dir, inst_brand):
     if inst_brand == "illumina":
         run_id = os.path.basename(os.path.abspath(run_dir))
     elif inst_brand == "element":
-        aviti_run = Aviti_Run(run_dir, CONFIG)
-        aviti_run.parse_run_parameters()
-        run_id = aviti_run.NGI_run_id
+        try:
+            aviti_run = Aviti_Run(run_dir, CONFIG)
+            aviti_run.parse_run_parameters()
+            run_id = aviti_run.NGI_run_id
+        except FileNotFoundError:
+            # Logger in Aviti_Run.parse_run_parameters() will print the warning
+            # WARNING - Run parameters file not found for ElementRun(<run_dir>), might not be ready yet
+            return
 
     statusdb_conf = CONFIG.get("statusdb")
     couch_connection = statusdb.StatusdbSession(statusdb_conf).connection
@@ -121,7 +132,13 @@ def update_statusdb(run_dir, inst_brand):
                             # Only updates the listed statuses
                             if (
                                 remote_status
-                                in ["New", "ERROR", "Sequencing", "Demultiplexing"]
+                                in [
+                                    "New",
+                                    "ERROR",
+                                    "Sequencing",
+                                    "Demultiplexing",
+                                    "Transferring",
+                                ]
                                 and sample_status != remote_status
                             ):
                                 # Appends old entry to new. Essentially merges the two
@@ -195,10 +212,14 @@ def get_status_element(aviti_run):
     nosync_pattern = re.compile("nosync")
     demultiplexing_status = aviti_run.get_demultiplexing_status()
     sequencing_done = aviti_run.check_sequencing_status()
+    transfer_status = aviti_run.get_transfer_status()
 
-    # If we're in a nosync folder
-    if nosync_pattern.search(aviti_run.run_dir):
+    # If rundir has finished transfer to no sync
+    if transfer_status in ["transferred", "rsync done"]:
         status = "New"
+    # If rundir is under transfer to nosync
+    elif transfer_status == "transferring":
+        status = "Transferring"
     # If demux is finished but transfer is not OR if demux is ongoing
     elif demultiplexing_status in ["finished", "ongoing"]:
         status = "Demultiplexing"
