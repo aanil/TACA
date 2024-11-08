@@ -4,6 +4,10 @@
 
 Add element instruments to bioinfo_tab
 
+## 20241031.1
+
+Fix extra postfix in sample names for BCL Convert
+
 ## 20241029.3
 
 Fix missing settings for BCL Convert
