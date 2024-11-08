@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241108.1
+
+Add element instruments to bioinfo_tab
+
 ## 20241029.3
 
 Fix missing settings for BCL Convert
