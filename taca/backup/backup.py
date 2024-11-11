@@ -129,12 +129,14 @@ class backup_utils:
                 ):
                     continue
                 if not (
-                    os.path.exists(os.path.join(data_dir, run_dir, "RTAComplete.txt")) # Illumina
+                    os.path.exists(
+                        os.path.join(data_dir, run_dir, "RTAComplete.txt")
+                    )  # Illumina
                     or os.path.exists(
-                        os.path.join(data_dir, run_dir, ".sync_finished") # ONT
+                        os.path.join(data_dir, run_dir, ".sync_finished")  # ONT
                     )
                     or os.path.exists(
-                        os.path.join(data_dir, run_dir, "RunUploaded.json") # Element
+                        os.path.join(data_dir, run_dir, "RunUploaded.json")  # Element
                     )
                 ):
                     required_size += run_sizes.get(self._get_run_type(run), 900)
@@ -299,19 +301,26 @@ class backup_utils:
             logger.warning(f'Not able to log "pdc_archived" timestamp for run {run}')
 
     def _is_ready_to_archive(self, run, ext):
-        """Check if the run to be encrypted has finished sequencing and has been copied completely to nas"""
+        """Check if the run to be encrypted has finished sequencing and has been copied completely to ngi_data"""
         archive_ready = False
         run_path = run.abs_path
         rta_file = os.path.join(run_path, self.finished_run_indicator)
         cp_file = os.path.join(run_path, self.copy_complete_indicator)
         if (
-            os.path.exists(rta_file)
-            and os.path.exists(cp_file)
-            and (not self.file_in_pdc(run.tar_encrypted))
-        ) or (
-            self._get_run_type(run.name) in ["promethion", "minion"]
-            and os.path.exists(os.path.join(run_path, ".sync_finished"))
-        ):  # TODO: add Aviti case
+            (
+                os.path.exists(rta_file)
+                and os.path.exists(cp_file)
+                and (not self.file_in_pdc(run.tar_encrypted))
+            )
+            or (
+                self._get_run_type(run.name) in ["promethion", "minion"]
+                and os.path.exists(os.path.join(run_path, ".sync_finished"))
+            )
+            or (
+                self._get_run_type(run.name) == "aviti"
+                and os.path.exists(os.path.join(run_path, "RunUploaded.json"))
+            )
+        ):
             # Case for encrypting
             # Run has NOT been encrypted (run.tar.gpg not exists)
             if ext == ".tar" and (not os.path.exists(run.tar_encrypted)):
@@ -391,9 +400,7 @@ class backup_utils:
                     )
                 else:
                     exclude_files = " ".join(
-                        [
-                            f"--exclude {x}" for x in bk.exclude_list
-                        ]  # TODO: files to exclude for aviti?
+                        [f"--exclude {x}" for x in bk.exclude_list]
                     )
                     logger.info(f"Creating archive tarball for run {run.name}")
                     if bk._call_commands(
