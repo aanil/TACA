@@ -7,6 +7,7 @@ from collections import OrderedDict, defaultdict
 
 from flowcell_parser.classes import RunParametersParser, SampleSheetParser
 
+from taca.element.Aviti_Runs import Aviti_Run
 from taca.utils import statusdb
 from taca.utils.config import CONFIG
 from taca.utils.misc import send_mail
@@ -24,47 +25,85 @@ class Tree(defaultdict):
 
 def collect_runs():
     """Update command."""
-    found_runs = []
+    found_runs = {"illumina": [], "element": []}
     # Pattern explained:
     # 6-8Digits_(maybe ST-)AnythingLetterornumberNumber_Number_AorBLetterornumberordash
-    rundir_re = re.compile("\d{6,8}_[ST-]*\w+\d+_\d+_[AB]?[A-Z0-9\-]+")
-    for data_dir in CONFIG["bioinfo_tab"]["data_dirs"]:
-        if os.path.exists(data_dir):
-            potential_run_dirs = glob.glob(os.path.join(data_dir, "*"))
-            for run_dir in potential_run_dirs:
-                if rundir_re.match(
-                    os.path.basename(os.path.abspath(run_dir))
-                ) and os.path.isdir(run_dir):
-                    found_runs.append(os.path.basename(run_dir))
-                    logger.info(f"Working on {run_dir}")
-                    update_statusdb(run_dir)
-        nosync_data_dir = os.path.join(data_dir, "nosync")
-        potential_nosync_run_dirs = glob.glob(os.path.join(nosync_data_dir, "*"))
-        for run_dir in potential_nosync_run_dirs:
-            if rundir_re.match(
-                os.path.basename(os.path.abspath(run_dir))
-            ) and os.path.isdir(run_dir):
-                update_statusdb(run_dir)
+    illumina_rundir_re = re.compile("\d{6,8}_[ST-]*\w+\d+_\d+_[AB]?[A-Z0-9\-]+")
+    for inst_brand in CONFIG["bioinfo_tab"]["data_dirs"]:
+        for data_dir in CONFIG["bioinfo_tab"]["data_dirs"][inst_brand]:
+            if os.path.exists(data_dir):
+                potential_run_dirs = glob.glob(os.path.join(data_dir, "*"))
+                for run_dir in potential_run_dirs:
+                    if os.path.isdir(run_dir):
+                        if inst_brand == "illumina" and illumina_rundir_re.match(
+                            os.path.basename(os.path.abspath(run_dir))
+                        ):
+                            found_runs[inst_brand].append(os.path.basename(run_dir))
+                            logger.info(f"Working on {run_dir}")
+                            update_statusdb(run_dir, inst_brand)
+                        elif inst_brand == "element":
+                            # Skip no sync dirs, they will be checked below
+                            if run_dir == os.path.join(data_dir, "nosync"):
+                                continue
+                            logger.info(f"Working on {run_dir}")
+                            update_statusdb(run_dir, inst_brand)
+
+                nosync_data_dir = os.path.join(data_dir, "nosync")
+                potential_nosync_run_dirs = glob.glob(
+                    os.path.join(nosync_data_dir, "*")
+                )
+                for run_dir in potential_nosync_run_dirs:
+                    if os.path.isdir(run_dir):
+                        if (
+                            inst_brand == "illumina"
+                            and illumina_rundir_re.match(
+                                os.path.basename(os.path.abspath(run_dir))
+                            )
+                        ) or inst_brand == "element":
+                            # Skip archived dirs
+                            if run_dir == os.path.join(nosync_data_dir, "archived"):
+                                continue
+                            update_statusdb(run_dir, inst_brand)
 
 
-def update_statusdb(run_dir):
+def update_statusdb(run_dir, inst_brand):
     """Gets status for a project."""
-    # Fetch individual fields
-    project_info = get_ss_projects(run_dir)
-    run_id = os.path.basename(os.path.abspath(run_dir))
+    if inst_brand == "illumina":
+        run_id = os.path.basename(os.path.abspath(run_dir))
+    elif inst_brand == "element":
+        try:
+            aviti_run = Aviti_Run(run_dir, CONFIG)
+            aviti_run.parse_run_parameters()
+            run_id = aviti_run.NGI_run_id
+        except FileNotFoundError:
+            # Logger in Aviti_Run.parse_run_parameters() will print the warning
+            # WARNING - Run parameters file not found for ElementRun(<run_dir>), might not be ready yet
+            return
+
     statusdb_conf = CONFIG.get("statusdb")
     couch_connection = statusdb.StatusdbSession(statusdb_conf).connection
     valueskey = datetime.datetime.now().isoformat()
     db = couch_connection["bioinfo_analysis"]
     view = db.view("latest_data/sample_id")
+
+    if inst_brand == "illumina":
+        # Fetch individual fields
+        project_info = get_ss_projects_illumina(run_dir)
+    elif inst_brand == "element":
+        project_info = get_ss_projects_element(aviti_run)
     # Construction and sending of individual records, if samplesheet is incorrectly formatted the loop is skipped
     if project_info:
         for flowcell in project_info:
             for lane in project_info[flowcell]:
                 for sample in project_info[flowcell][lane]:
+                    if "phix" in sample.lower():
+                        continue
                     for project in project_info[flowcell][lane][sample]:
-                        project_info[flowcell][lane][sample].value = get_status(run_dir)
-                        sample_status = project_info[flowcell][lane][sample].value
+                        if inst_brand == "illumina":
+                            sample_status = get_status(run_dir)
+                        elif inst_brand == "element":
+                            sample_status = get_status_element(aviti_run)
+                        project_info[flowcell][lane][sample].value = sample_status
                         obj = {
                             "run_id": run_id,
                             "project_id": project,
@@ -72,6 +111,7 @@ def update_statusdb(run_dir):
                             "lane": lane,
                             "sample": sample,
                             "status": sample_status,
+                            "instrument_type": inst_brand,
                             "values": {
                                 valueskey: {
                                     "user": "taca",
@@ -92,7 +132,13 @@ def update_statusdb(run_dir):
                             # Only updates the listed statuses
                             if (
                                 remote_status
-                                in ["New", "ERROR", "Sequencing", "Demultiplexing"]
+                                in [
+                                    "New",
+                                    "ERROR",
+                                    "Sequencing",
+                                    "Demultiplexing",
+                                    "Transferring",
+                                ]
                                 and sample_status != remote_status
                             ):
                                 # Appends old entry to new. Essentially merges the two
@@ -159,8 +205,50 @@ def get_status(run_dir):
     return status
 
 
-def get_ss_projects(run_dir):
-    """Fetches project, FC, lane & sample (sample-run) status for a given folder."""
+def get_status_element(aviti_run):
+    """Gets status of a aviti sample run, based on flowcell info."""
+    # Default state, should never occur
+    status = "ERROR"
+    demultiplexing_status = aviti_run.get_demultiplexing_status()
+    sequencing_done = aviti_run.check_sequencing_status()
+    transfer_status = aviti_run.get_transfer_status()
+
+    # If rundir has finished transfer to no sync
+    if transfer_status in ["transferred", "rsync done"]:
+        status = "New"
+    # If rundir is under transfer to nosync
+    elif transfer_status == "transferring":
+        status = "Transferring"
+    # If demux is finished but transfer is not OR if demux is ongoing
+    elif demultiplexing_status in ["finished", "ongoing"]:
+        status = "Demultiplexing"
+    # If sequencing is not done yet
+    elif not sequencing_done:
+        status = "Sequencing"
+    return status
+
+
+def get_ss_projects_element(aviti_run):
+    """Fetches project, FC, lane & sample (sample-run) status for a given folder for element runs"""
+    proj_tree = Tree()
+    flowcell_id = aviti_run.flowcell_id
+    assigned_indexes = aviti_run.read_index_assignement_file()
+    if assigned_indexes:
+        for sample_dict in assigned_indexes:
+            lane = sample_dict["Lane"]
+            sample_id = sample_dict["SampleName"]
+            project = sample_id.split("_")[0]
+            proj_tree[flowcell_id][lane][sample_id][project]
+
+    if list(proj_tree.keys()) == []:
+        logger.info(
+            f"There was something wrong with the index assignment file, CHECK {aviti_run.NGI_run_id}"
+        )
+    return proj_tree
+
+
+def get_ss_projects_illumina(run_dir):
+    """Fetches project, FC, lane & sample (sample-run) status for a given folder for illumina runs"""
     proj_tree = Tree()
     lane_pattern = re.compile("^([1-8]{1,2})$")
     sample_proj_pattern = re.compile("^((P[0-9]{3,5})_[0-9]{3,5})")
@@ -221,41 +309,37 @@ def get_ss_projects(run_dir):
         lanes = str(1)
         # Pattern is a bit more rigid since we're no longer also checking for lanes
         sample_proj_pattern = re.compile("^((P[0-9]{3,5})_[0-9]{3,5})$")
-        data = parse_samplesheet(FCID_samplesheet_origin, run_dir, is_miseq=True)
     # HiSeq X case
     elif "HiSeq X" in runtype:
         FCID_samplesheet_origin = os.path.join(
             CONFIG["bioinfo_tab"]["xten_samplesheets"], current_year, f"{FCID}.csv"
         )
-        data = parse_samplesheet(FCID_samplesheet_origin, run_dir)
     # HiSeq 2500 case
     elif "HiSeq" in runtype or "TruSeq" in runtype:
         FCID_samplesheet_origin = os.path.join(
             CONFIG["bioinfo_tab"]["hiseq_samplesheets"], current_year, f"{FCID}.csv"
         )
-        data = parse_samplesheet(FCID_samplesheet_origin, run_dir)
     elif "NovaSeqXPlus" in runtype:
         FCID_samplesheet_origin = os.path.join(
             CONFIG["bioinfo_tab"]["novaseqxplus_samplesheets"],
             current_year,
             f"{FCID}.csv",
         )
-        data = parse_samplesheet(FCID_samplesheet_origin, run_dir)
     # NovaSeq 6000 case
     elif "NovaSeq" in runtype:
         FCID_samplesheet_origin = os.path.join(
             CONFIG["bioinfo_tab"]["novaseq_samplesheets"], current_year, f"{FCID}.csv"
         )
-        data = parse_samplesheet(FCID_samplesheet_origin, run_dir)
     # NextSeq Case
     elif "NextSeq" in runtype:
         FCID_samplesheet_origin = os.path.join(
             CONFIG["bioinfo_tab"]["nextseq_samplesheets"], current_year, f"{FCID}.csv"
         )
-        data = parse_samplesheet(FCID_samplesheet_origin, run_dir)
     else:
         logger.warn(f"Cannot locate the samplesheet for run {run_dir}")
         return []
+
+    data = parse_samplesheet(FCID_samplesheet_origin, run_dir, is_miseq=miseq)
 
     # If samplesheet is empty, don't bother going through it
     if data == []:

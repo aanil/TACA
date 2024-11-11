@@ -221,6 +221,20 @@ class Run:
         self.operator_name = run_parameters.get("OperatorName")
         self.run_parameters_parsed = True
 
+    def read_index_assignement_file(self):
+        # Read and return the data in the index assignment file
+        index_assignement_file = os.path.join(
+            self.run_dir, "Demultiplexing", "IndexAssignment.csv"
+        )
+        if os.path.exists(index_assignement_file):
+            with open(index_assignement_file) as index_file:
+                reader = csv.DictReader(index_file)
+                index_assignments = [row for row in reader]
+        else:
+            index_assignments = None
+
+        return index_assignments
+
     def to_doc_obj(self):
         # TODO: are we sure what we should do when the RunParameters.json file is missing?
 
@@ -240,15 +254,7 @@ class Run:
             else:
                 instrument_generated_files[os.path.basename(file)] = None
         # Aggregated demux stats files
-        index_assignement_file = os.path.join(
-            self.run_dir, "Demultiplexing", "IndexAssignment.csv"
-        )
-        if os.path.exists(index_assignement_file):
-            with open(index_assignement_file) as index_file:
-                reader = csv.DictReader(index_file)
-                index_assignments = [row for row in reader]
-        else:
-            index_assignments = None
+        index_assignments = self.read_index_assignement_file()
 
         unassigned_sequences_file = os.path.join(
             self.run_dir, "Demultiplexing", "UnassignedSequences.csv"
