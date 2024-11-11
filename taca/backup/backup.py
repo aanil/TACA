@@ -48,9 +48,7 @@ class backup_utils:
             self.mail_recipients = CONFIG["mail"]["recipients"]
             self.check_demux = CONFIG.get("backup", {}).get("check_demux", False)
             self.couch_info = CONFIG.get("statusdb")
-            self.finished_run_indicator = CONFIG.get(
-                "storage", {}
-            ).get(  # TODO: breakout
+            self.finished_run_indicator = CONFIG.get("storage", {}).get(
                 "finished_run_indicator", "RTAComplete.txt"
             )
             self.copy_complete_indicator = CONFIG.get("storage", {}).get(
@@ -278,27 +276,40 @@ class backup_utils:
 
     def _log_pdc_statusdb(self, run):
         """Log the time stamp in statusDB if a file is succussfully sent to PDC."""
-        try:
-            run_vals = run.split("_")
-            if len(run_vals[0]) == 8:
-                run_date = run_vals[0][2:]
-            else:
-                run_date = run_vals[0]
-            run_fc = f"{run_date}_{run_vals[-1]}"  # TODO: does this work for Aviti?
-            couch_connection = statusdb.StatusdbSession(self.couch_info).connection
-            db = couch_connection[
-                self.couch_info["db"]
-            ]  # TODO: does this work for Aviti?
-            fc_names = {e.key: e.id for e in db.view("names/name", reduce=False)}
-            d_id = fc_names[run_fc]
-            doc = db.get(d_id)
-            doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            db.save(doc)
-            logger.info(
-                f'Logged "pdc_archived" timestamp for fc {run} in statusdb doc "{d_id}"'
-            )
-        except:
-            logger.warning(f'Not able to log "pdc_archived" timestamp for run {run}')
+        if "AV" not in run:
+            try:
+                run_vals = run.split("_")
+                if len(run_vals[0]) == 8:
+                    run_date = run_vals[0][2:]
+                else:
+                    run_date = run_vals[0]
+                run_fc = f"{run_date}_{run_vals[-1]}"
+                couch_connection = statusdb.StatusdbSession(self.couch_info).connection
+                db = couch_connection[self.couch_info["db"]]
+                fc_names = {e.key: e.id for e in db.view("names/name", reduce=False)}
+                d_id = fc_names[run_fc]
+                doc = db.get(d_id)
+                doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                db.save(doc)
+                logger.info(
+                    f'Logged "pdc_archived" timestamp for fc {run} in statusdb doc "{d_id}"'
+                )
+            except:
+                logger.warning(
+                    f'Not able to log "pdc_archived" timestamp for run {run}'
+                )
+        else:
+            try:
+                element_db_connection = statusdb.ElementRunsConnection(
+                    self.CONFIG.get("statusdb", {}), dbname="element_runs"
+                )
+                run_doc = element_db_connection.get_db_entry(run)
+                run_doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                element_db_connection.upload_to_statusdb(run_doc)
+            except:
+                logger.warning(
+                    f'Not able to log "pdc_archived" timestamp for run {run}'
+                )
 
     def _is_ready_to_archive(self, run, ext):
         """Check if the run to be encrypted has finished sequencing and has been copied completely to ngi_data"""
