@@ -301,7 +301,7 @@ class backup_utils:
         else:
             try:
                 element_db_connection = statusdb.ElementRunsConnection(
-                    self.CONFIG.get("statusdb", {}), dbname="element_runs"
+                    self.couch_info, dbname="element_runs"
                 )
                 run_doc = element_db_connection.get_db_entry(run)
                 run_doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
