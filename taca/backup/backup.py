@@ -173,7 +173,7 @@ class backup_utils:
             value = False
         if not silent:
             msg = "File {} {} in PDC".format(
-                src_file_abs, "exist" if value else "do not exist"
+                src_file_abs, "exist" if value else "does not exist"
             )
             logger.info(msg)
         return value
