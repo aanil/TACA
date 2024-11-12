@@ -303,7 +303,8 @@ class backup_utils:
                 element_db_connection = statusdb.ElementRunsConnection(
                     self.couch_info, dbname="element_runs"
                 )
-                run_doc = element_db_connection.get_db_entry(run)
+                run_doc_id = element_db_connection.get_db_entry(run).value
+                run_doc = element_db_connection.db[run_doc_id]
                 run_doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 element_db_connection.upload_to_statusdb(run_doc)
             except:
