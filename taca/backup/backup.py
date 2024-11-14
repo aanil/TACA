@@ -276,7 +276,7 @@ class backup_utils:
 
     def _log_pdc_statusdb(self, run):
         """Log the time stamp in statusDB if a file is succussfully sent to PDC."""
-        if "AV" not in run:
+        if "_AV" not in run:
             try:
                 run_vals = run.split("_")
                 if len(run_vals[0]) == 8:
