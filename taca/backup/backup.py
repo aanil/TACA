@@ -306,6 +306,7 @@ class backup_utils:
                 run_doc_id = element_db_connection.get_db_entry(run).value
                 run_doc = element_db_connection.db[run_doc_id]
                 run_doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                run_doc["run_status"] = "archived"
                 element_db_connection.upload_to_statusdb(run_doc)
             except:
                 logger.warning(
