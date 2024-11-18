@@ -39,7 +39,7 @@ def main(args):
     pore_counts = get_pore_counts(position_logs)
 
     handle_runs(pore_counts, args, rsync_log)
-    delete_archived_runs(args, rsync_log)
+    delete_archived_runs(args)
 
 
 def handle_runs(pore_counts, args, rsync_log):
