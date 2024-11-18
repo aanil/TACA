@@ -196,7 +196,7 @@ class backup_utils:
                 "^(\d{8})_(\d{4})_([1-3][A-H])_([0-9a-zA-Z]+)_([0-9a-zA-Z]+)$", run
             ):
                 run_type = "promethion"
-            elif "_AV" in run:
+            elif re.match(filesystem.RUN_RE_ELEMENT, run):
                 run_type = "aviti"
             else:
                 run_type = ""
@@ -276,7 +276,21 @@ class backup_utils:
 
     def _log_pdc_statusdb(self, run):
         """Log the time stamp in statusDB if a file is succussfully sent to PDC."""
-        if "_AV" not in run:
+        if re.match(filesystem.RUN_RE_ELEMENT, run):
+            try:
+                element_db_connection = statusdb.ElementRunsConnection(
+                    self.couch_info, dbname="element_runs"
+                )
+                run_doc_id = element_db_connection.get_db_entry(run).value
+                run_doc = element_db_connection.db[run_doc_id]
+                run_doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                run_doc["run_status"] = "archived"
+                element_db_connection.upload_to_statusdb(run_doc)
+            except:
+                logger.warning(
+                    f'Not able to log "pdc_archived" timestamp for run {run}'
+                )
+        else:
             try:
                 run_vals = run.split("_")
                 if len(run_vals[0]) == 8:
@@ -294,20 +308,6 @@ class backup_utils:
                 logger.info(
                     f'Logged "pdc_archived" timestamp for fc {run} in statusdb doc "{d_id}"'
                 )
-            except:
-                logger.warning(
-                    f'Not able to log "pdc_archived" timestamp for run {run}'
-                )
-        else:
-            try:
-                element_db_connection = statusdb.ElementRunsConnection(
-                    self.couch_info, dbname="element_runs"
-                )
-                run_doc_id = element_db_connection.get_db_entry(run).value
-                run_doc = element_db_connection.db[run_doc_id]
-                run_doc["pdc_archived"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                run_doc["run_status"] = "archived"
-                element_db_connection.upload_to_statusdb(run_doc)
             except:
                 logger.warning(
                     f'Not able to log "pdc_archived" timestamp for run {run}'
