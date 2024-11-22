@@ -123,7 +123,10 @@ def update_statusdb(run_dir, inst_brand):
                         # Special if case to handle lanes written as int, can be safely removed when old lanes
                         # is no longer stored as int
                         try:
-                            if len(view[[project, run_id, int(lane), sample]].rows) >= 1:
+                            if (
+                                len(view[[project, run_id, int(lane), sample]].rows)
+                                >= 1
+                            ):
                                 lane = int(lane)
                         except ValueError:
                             pass
