@@ -2,6 +2,10 @@
 
 ## 20241108.1
 
+Add exception handling for nonnumeric flowcell ids in bioinfo_tab
+
+## 20241108.1
+
 Add element instruments to bioinfo_tab
 
 ## 20241031.1
