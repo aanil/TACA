@@ -12,7 +12,7 @@ from taca.organise import organise
     type=str,
     required=True,
     help="Project ID (e.g. P12345)",
-)
+) # future todo: option to organise all flowcells in a project
 @click.argument("flowcells")
 def organise_flowcells(flowcells, project):
     """Organise FLOWCELLS.
