@@ -1,5 +1,13 @@
 # TACA Version Log
 
+## 20241112.1
+
+Add support for backing up Element Aviti data to PDC
+
+## 20241108.1
+
+Add exception handling for nonnumeric flowcell ids in bioinfo_tab
+
 ## 20241108.1
 
 Add element instruments to bioinfo_tab
