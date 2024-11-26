@@ -1,8 +1,16 @@
 # TACA Version Log
 
-## 20241118.1
+## 20241126.1
 
 Add automated cleanup to ONT transfer script.
+
+## 20241112.1
+
+Add support for backing up Element Aviti data to PDC
+
+## 20241108.1
+
+Add exception handling for nonnumeric flowcell ids in bioinfo_tab
 
 ## 20241108.1
 
