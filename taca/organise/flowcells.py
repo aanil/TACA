@@ -2,24 +2,21 @@
 
 import logging
 import os
+import re
 
+from taca.utils import filesystem
 from taca.utils.config import CONFIG
-from taca.utils.misc import call_external_command_detached
+from taca.utils.misc import call_external_command
 
 logger = logging.getLogger(__name__)
 
-def get_flowcell_type(flowcell):
-    """Return flowcell type based on flowcell name"""
-    pass
 
-def instantiate_flowcell(flowcell, project):
-    flowcell_type = get_flowcell_type(flowcell)
-
-    if flowcell_type == "nanopore":
+def get_flowcell_object(flowcell, project):
+    if re.match(filesystem.RUN_RE_ONT, flowcell):
         return NanoporeFlowcell(flowcell=flowcell, project_id=project)
-    elif flowcell_type == "illumina":
+    elif re.match(filesystem.RUN_RE_ILLUMINA, flowcell):
         return IlluminaFlowcell(flowcell=flowcell, project_id=project)
-    elif flowcell_type == "element":
+    elif re.match(filesystem.RUN_RE_ELEMENT, flowcell):
         return ElementFlowcell(flowcell=flowcell, project_id=project)
     else:
         logger.warning(
@@ -27,16 +24,16 @@ def instantiate_flowcell(flowcell, project):
         )
         return
 
+
 class Flowcell:
     """Defines a generic Flowcell"""
 
     def __init__(self, flowcell, project_id):
         self.fc_id = flowcell
-        self.project_id = project_id
-        self.detsination_path = CONFIG.get("organise", None).get(
-            self.fc_type + "_path", None
+        self.fc_path_incoming = os.path.join(
+            CONFIG.get("organise", None).get("incoming_path", None), self.fc_id
         )
-        self.organised_project_dir = os.path.join(self.detsination_path, project_id)
+        self.project_id = project_id
 
     def create_org_dir(self):
         """Create a project directory that the data should be organised to."""
@@ -50,14 +47,23 @@ class NanoporeFlowcell(Flowcell):
 
     def __init__(self, flowcell, project_id):
         super().__init__(flowcell, project_id)
-        self.fc_type = "nanopore"
+        self.destination_path = CONFIG.get("organise", None).get("nanopore_path", None)
+        self.organised_project_dir = os.path.join(self.destination_path, project_id)
+        self.tar_file = self.fc_id + ".tar"
+        self.tar_path = os.path.join(self.organised_project_dir, self.tar_file)
+        self.md5_file = self.tar_file + ".md5"
 
     def organise_data(self):
         """Tarball data into ONT_TAR"""
-        # generate tarball (detached process? how to signal when tarballing is done?)
         # future todo: also organise data in DATA for easier analysis
-        tar_command = f'tar -cf {self.fc_id}'
-        call_external_command_detached(tar_command)
+        with filesystem.chdir(self.organised_project_dir):
+            tar_command = f"tar -cf {self.tar_file} {self.fc_path_incoming}" #TODO: get the correct command
+            call_external_command(tar_command, with_log_files=True)
+            md5_command = f"md5sum {self.tar_path} > {self.md5_file}"
+            call_external_command(
+                md5_command, with_log_files=True
+            )  # TODO: check if the md5 command plays nicely with call_external_command
+        # TODO: Add a timestamp to statusdb indicating when the FC was organised
 
 
 class IlluminaFlowcell(Flowcell):
@@ -65,7 +71,6 @@ class IlluminaFlowcell(Flowcell):
 
     def __init__(self, flowcell, project_id):
         super().__init__(flowcell, project_id)
-        self.fc_type = "illumina"
 
     def organise_data(self):
         """Symlink data into DATA"""
@@ -77,7 +82,6 @@ class ElementFlowcell(Flowcell):
 
     def __init__(self, flowcell):
         super().__init__(flowcell)
-        self.fc_type = "element"
 
     def organise_data(self):
         """Symlink data into DATA"""
