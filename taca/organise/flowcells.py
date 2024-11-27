@@ -3,10 +3,10 @@
 import logging
 import os
 import re
+import subprocess
 
 from taca.utils import filesystem
 from taca.utils.config import CONFIG
-from taca.utils.misc import call_external_command
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,10 @@ class Flowcell:
 
     def __init__(self, flowcell, project_id):
         self.fc_id = flowcell
-        self.fc_path_incoming = os.path.join(
-            CONFIG.get("organise", None).get("incoming_path", None), self.fc_id
+        self.incoming_path = os.path.join(
+            CONFIG.get("organise", None).get("incoming_path", None)
         )
+        self.fc_path_incoming = os.path.join(self.incoming_path, self.fc_id)
         self.project_id = project_id
 
     def create_org_dir(self):
@@ -51,18 +52,27 @@ class NanoporeFlowcell(Flowcell):
         self.organised_project_dir = os.path.join(self.destination_path, project_id)
         self.tar_file = self.fc_id + ".tar"
         self.tar_path = os.path.join(self.organised_project_dir, self.tar_file)
-        self.md5_file = self.tar_file + ".md5"
+        self.md5_path = self.tar_path + ".md5"
 
     def organise_data(self):
         """Tarball data into ONT_TAR"""
         # future todo: also organise data in DATA for easier analysis
+        with filesystem.chdir(self.incoming_path):
+            try:
+                tar_command = ["tar", "-cvf", self.tar_path, self.fc_id]
+                subprocess.run(tar_command)  # TODO: catch out and err in files
+            except subprocess.CalledProcessError as e:
+                raise e
         with filesystem.chdir(self.organised_project_dir):
-            tar_command = f"tar -cf {self.tar_file} {self.fc_path_incoming}" #TODO: get the correct command
-            call_external_command(tar_command, with_log_files=True)
-            md5_command = f"md5sum {self.tar_path} > {self.md5_file}"
-            call_external_command(
-                md5_command, with_log_files=True
-            )  # TODO: check if the md5 command plays nicely with call_external_command
+            try:
+                md5_command = ["md5sum", self.tar_file]
+                result = subprocess.run(
+                    md5_command, capture_output=True, text=True
+                )  # TODO: catch err in files
+                with open(self.md5_path, "w") as md5_file:
+                    md5_file.write(result.stdout)
+            except subprocess.CalledProcessError as e:
+                raise e
         # TODO: Add a timestamp to statusdb indicating when the FC was organised
 
 
