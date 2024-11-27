@@ -44,11 +44,13 @@ def main(args):
 
 def handle_runs(pore_counts, args, rsync_log):
     logging.info("Finding runs...")
-    # Look for dirs matching run pattern 3 levels deep from source
+    # Look for dirs matching run pattern 3 levels deep from source, excluding certain dirs
+    exclude_dirs = ["nosync", "keep_data", "cg_data"]
     run_paths = [
         path
         for path in glob(os.path.join(args.source_dir, "*", "*", "*"), recursive=True)
         if re.match(RUN_PATTERN, os.path.basename(path))
+        and path.split(os.sep)[-3] not in exclude_dirs
     ]
     logging.info(f"Found {len(run_paths)} runs...")
 
