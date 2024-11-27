@@ -1,5 +1,6 @@
 """Miscellaneous or general-use methods."""
 
+import glob
 import hashlib
 import os
 import smtplib
@@ -190,6 +191,9 @@ def run_is_demuxed(run, couch_info=None, seq_run_type=None):
     check that .sync_finished exists, which is created by TACA when the sync is finalized. Since demux is done on the sequencers
     in parallel to sequencing, the presence of this file also implies that demux is done.
 
+    For Aviti runs:
+    Check if all sub-demux folders have a RunStats.json. If this is the case then demux is finished.
+
     For Illumina runs:
     Check in StatusDB 'x_flowcells' database if the given run has an entry which means it was
     demultiplexed (as TACA only creates a document upon successfull demultiplexing)
@@ -201,6 +205,19 @@ def run_is_demuxed(run, couch_info=None, seq_run_type=None):
             return True
         else:
             return False
+    elif seq_run_type == "aviti":
+        sub_demux_dirs = glob.glob(os.path.join(run.abs_path, "Demultiplexing_*"))
+        finished_count = 0
+        for demux_dir in sub_demux_dirs:
+            found_demux_stats_file = glob.glob(
+                os.path.join(demux_dir, "*RunStats.json")
+            )
+            if not found_demux_stats_file:
+                return False
+            elif found_demux_stats_file:
+                finished_count += 1
+        if sub_demux_dirs and finished_count == len(sub_demux_dirs):
+            return True
     else:
         if not couch_info:
             raise SystemExit(
