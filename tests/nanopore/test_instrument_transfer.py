@@ -96,9 +96,10 @@ def test_main_delete(setup_test_fixture):
     innocent_run_path = f"{args.archive_dir}/innocent_experiment/innocent_sample/{DUMMY_RUN_NAME.replace('randomhash', 'dontDeleteMe')}"
     os.makedirs(innocent_run_path)
 
-    with patch("shutil.rmtree", side_effect=shutil.rmtree) as mock_rmtree, patch(
-        "os.rmdir", side_effect=os.rmdir
-    ) as mock_rmdir:
+    with (
+        patch("shutil.rmtree", side_effect=shutil.rmtree) as mock_rmtree,
+        patch("os.rmdir", side_effect=os.rmdir) as mock_rmdir,
+    ):
         # Run code
         instrument_transfer.main(args)
 
