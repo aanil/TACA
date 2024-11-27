@@ -32,6 +32,7 @@ def setup_test_fixture():
         args.source_dir,
         args.dest_dir,
         args.dest_dir + "/nosync",
+        args.dest_dir + "/nosync/archived",
         args.dest_dir_qc,
         args.archive_dir,
         args.minknow_logs_dir,
