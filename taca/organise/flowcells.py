@@ -30,9 +30,7 @@ class Flowcell:
 
     def __init__(self, flowcell, project_id):
         self.fc_id = flowcell
-        self.incoming_path = os.path.join(
-            CONFIG.get("organise", None).get("incoming_path", None)
-        )
+        self.incoming_path = os.path.join(CONFIG.get("organise").get("incoming_path"))
         self.fc_path_incoming = os.path.join(self.incoming_path, self.fc_id)
         self.project_id = project_id
 
@@ -48,7 +46,7 @@ class NanoporeFlowcell(Flowcell):
 
     def __init__(self, flowcell, project_id):
         super().__init__(flowcell, project_id)
-        self.destination_path = CONFIG.get("organise", None).get("nanopore_path", None)
+        self.destination_path = CONFIG.get("organise").get("nanopore_path")
         self.organised_project_dir = os.path.join(self.destination_path, project_id)
         self.tar_file = self.fc_id + ".tar"
         self.tar_path = os.path.join(self.organised_project_dir, self.tar_file)
@@ -57,14 +55,19 @@ class NanoporeFlowcell(Flowcell):
     def organise_data(self):
         """Tarball data into ONT_TAR"""
         # future todo: also organise data in DATA for easier analysis
+        tar_err = os.path.join(self.organised_project_dir, "tar.err")
         with filesystem.chdir(self.incoming_path):
             try:
-                tar_command = ["tar", "-cvf", self.tar_path, self.fc_id]
-                result = subprocess.run(tar_command, capture_output=True, text=True)
-                tar_err = os.path.join(self.organised_project_dir, "tar.err")
-                with open(tar_err, "w") as f:
-                    f.write(result.stderr)
+                with open(tar_err, "w") as error_file:
+                    tar_command = ["tar", "-cvf", self.tar_path, self.fc_id]
+                    result = subprocess.run(tar_command, stderr=error_file)
+                    logger.info(
+                        f"Finished making tarball for {self.fc_id}. Proceeding with md5sum."
+                    )
             except subprocess.CalledProcessError as e:
+                logger.error(
+                    f"An error occurred during tarring of {self.fc_id}. Please check {tar_err} for more information."
+                )
                 raise e
         with filesystem.chdir(self.organised_project_dir):
             try:
@@ -72,7 +75,9 @@ class NanoporeFlowcell(Flowcell):
                 result = subprocess.run(md5_command, capture_output=True, text=True)
                 with open(self.md5_path, "w") as f:
                     f.write(result.stdout)
+                logger.info(f"Finished generating md5sum for {self.fc_id}.")
             except subprocess.CalledProcessError as e:
+                logger.error(f"An error occurred while generating the md5sum for {self.fc_id}.")
                 raise e
         # TODO: Add a timestamp to statusdb indicating when the FC was organised
 
