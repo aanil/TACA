@@ -85,8 +85,10 @@ def delete_archived_runs(args):
     ]
     logging.info(f"Found {len(run_paths)} locally archived runs...")
 
-    preproc_archive_contents = os.listdir(os.path.join(args.dest_dir, "nosync"))
-
+    preproc_archive_contents = set(
+        os.listdir(os.path.join(args.dest_dir, "nosync")),
+        os.listdir(os.path.join(args.dest_dir, "nosync", "archived")),
+    )
     # Iterate over runs
     for run_path in run_paths:
         logging.info(f"Handling locally archived run {run_path}...")
