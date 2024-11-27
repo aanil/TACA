@@ -55,6 +55,7 @@ class NanoporeFlowcell(Flowcell):
     def organise_data(self):
         """Tarball data into ONT_TAR"""
         # future todo: also organise data in DATA for easier analysis
+        # future todo: make a list of samples included in the tarball
         tar_err = os.path.join(self.organised_project_dir, "tar.err")
         with filesystem.chdir(self.incoming_path):
             try:
