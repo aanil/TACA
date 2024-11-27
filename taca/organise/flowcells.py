@@ -60,17 +60,18 @@ class NanoporeFlowcell(Flowcell):
         with filesystem.chdir(self.incoming_path):
             try:
                 tar_command = ["tar", "-cvf", self.tar_path, self.fc_id]
-                subprocess.run(tar_command)  # TODO: catch out and err in files
+                result = subprocess.run(tar_command, capture_output=True, text=True)
+                tar_err = os.path.join(self.organised_project_dir, "tar.err")
+                with open(tar_err, "w") as f:
+                    f.write(result.stderr)
             except subprocess.CalledProcessError as e:
                 raise e
         with filesystem.chdir(self.organised_project_dir):
             try:
                 md5_command = ["md5sum", self.tar_file]
-                result = subprocess.run(
-                    md5_command, capture_output=True, text=True
-                )  # TODO: catch err in files
-                with open(self.md5_path, "w") as md5_file:
-                    md5_file.write(result.stdout)
+                result = subprocess.run(md5_command, capture_output=True, text=True)
+                with open(self.md5_path, "w") as f:
+                    f.write(result.stdout)
             except subprocess.CalledProcessError as e:
                 raise e
         # TODO: Add a timestamp to statusdb indicating when the FC was organised
