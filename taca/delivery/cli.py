@@ -28,11 +28,9 @@ def delivery():
 @click.argument("project")
 def stage(project, flowcells, samples):
     """Stage a project in DELIVERY and setup DDS delivery project."""
-    flowcells_to_stage = flowcells.split(",") or None
-    samples_to_stage = samples.split(",") or None
-    deliver.stage_project(
-        project, flowcells=flowcells_to_stage, samples=samples_to_stage
-    )
+    flowcells_to_stage = flowcells.split(",") if flowcells else None
+    samples_to_stage = samples.split(",") if samples else None
+    deliver.stage(project, flowcells=flowcells_to_stage, samples=samples_to_stage)
 
 
 # Upload data
