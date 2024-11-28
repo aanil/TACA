@@ -78,7 +78,9 @@ class NanoporeFlowcell(Flowcell):
                     f.write(result.stdout)
                 logger.info(f"Finished generating md5sum for {self.fc_id}.")
             except subprocess.CalledProcessError as e:
-                logger.error(f"An error occurred while generating the md5sum for {self.fc_id}.")
+                logger.error(
+                    f"An error occurred while generating the md5sum for {self.fc_id}."
+                )
                 raise e
         # TODO: Add a timestamp to statusdb indicating when the FC was organised
 
