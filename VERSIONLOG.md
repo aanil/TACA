@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241128.1
+
+Add automated cleanup to ONT transfer script.
+
 ## 20241127.1
 
 Add support for organising ONT data on Miarka
