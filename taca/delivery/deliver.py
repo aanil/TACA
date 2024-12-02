@@ -28,11 +28,6 @@ def locate_data_dirs(project):
     return project_locations
 
 
-def get_dds_project(project):
-    """Set up a DDS project"""
-    pass
-
-
 def stage(project, flowcells, samples):
     """Determine data type and stage accordingly."""
     project_data_dirs = locate_data_dirs(project)
@@ -40,17 +35,6 @@ def stage(project, flowcells, samples):
     if not project_data_dirs:
         logger.warning(f"Could not find any data to stage for {project}. Exiting.")
         sys.exit()
-
-    dds_project = get_dds_project(project)
-    staging_path = CONFIG.get("delivery").get("staging_path")
-    project_staging_path = os.path.join(staging_path, project, dds_project)
-    try:
-        os.makedirs(project_staging_path)
-    except OSError as e:
-        logger.error(
-            f"An error occurred while setting up the staging directory {project_staging_path}. Aborting."
-        )
-        raise (e)
 
     for project_dir in project_data_dirs:
         staging_object = get_staging_object(project, project_dir, flowcells, samples)
