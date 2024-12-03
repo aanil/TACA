@@ -3,8 +3,8 @@
 import glob
 import logging
 import os
-
 from datetime import datetime
+
 from taca.utils.config import CONFIG
 from taca.utils.filesystem import do_symlink
 
@@ -60,19 +60,24 @@ class StageTar(Stage):
             for fc in self.flowcells:
                 fc_tarballs.append(os.path.join(self.project_dir, fc + ".tar"))
         else:
-            fc_tarballs = glob.glob(
-                os.path.join(self.project_dir, "*.tar")
-            )  # TODO: make more accurate
+            fc_tarballs = glob.glob(os.path.join(self.project_dir, "*.tar"))
         # future todo: look in DB for FCs that have already been delivered/are failed or aborted and exclude them unless listed in -f option
-        for tarball_path in fc_tarballs:  # TODO: handle files/dirs that don't exist
-            tarball_filename = os.path.basename(tarball_path)
-            do_symlink(
-                tarball_path, os.path.join(self.project_staging_path, tarball_filename)
-            )
-            do_symlink(
-                tarball_path + ".md5",
-                os.path.join(self.project_staging_path, tarball_filename + ".md5"),
-            )
+        for tarball_path in fc_tarballs:
+            try:
+                tarball_filename = os.path.basename(tarball_path)
+                do_symlink(
+                    tarball_path,
+                    os.path.join(self.project_staging_path, tarball_filename),
+                )
+                do_symlink(
+                    tarball_path + ".md5",
+                    os.path.join(self.project_staging_path, tarball_filename + ".md5"),
+                )
+            except FileExistsError as e:
+                logger.error(
+                    f"An error occurred while symlinking {tarball_path} to {self.project_staging_path}."
+                )
+                raise (e)
         # future todo: symlink reports
         logger.info(
             f"Successfully staged {self.project_id} to {self.project_staging_path}"
@@ -87,9 +92,9 @@ class StageData(Stage):
 
     def stage_data(self):
         """Stage relevant files in DATA."""
-        # future todo: look for any aborted samples that should not be delivered and exclude aborted fc/samples and those not listed in -f and -s
+        # Make a list of samples that should be delivered
         # Generate md5sums
-        # Symlink all data to DELIVERY/PID/DDSID
+        # Symlink all data to DELIVERY/PID/TIMESTAMP
         # Make xml files
         pass
 
@@ -102,7 +107,7 @@ class StageAnalysis(Stage):
 
     def stage_data(self):
         """Stage relevant files in ANALYSIS."""
-        # future todo: for BP, look for any aborted samples that should not be delivered and exclude aborted fc/samples and those not listed in -f and -s
+        # For BP, Make a list of samples that should be delivered
         # Generate md5sums
-        # Symlink all data to DELIVERY/PID/DDSID
+        # Symlink all data and reports to DELIVERY/PID/DDSID
         pass

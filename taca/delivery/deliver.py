@@ -39,8 +39,7 @@ def stage(project, flowcells, samples):
     for project_dir in project_data_dirs:
         staging_object = get_staging_object(project, project_dir, flowcells, samples)
         staging_object.stage_data()
-
-    # Update statusdb with DDSID and status "staged" (project, FC or sample level? Maybe new delivery DB?)
+    # future todo: update statusdb with status "staged" (project, FC or sample level? Maybe new delivery DB?)
 
 
 def upload_to_dds(project, dds_id):
