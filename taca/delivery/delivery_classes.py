@@ -39,7 +39,7 @@ class Stage:
         )
         try:
             os.makedirs(self.project_staging_path)
-        except OSError as e:
+        except OSError as e: # future todo: cleanup failed staging and handle rerunning staging with new data
             logger.error(
                 f"An error occurred while setting up the staging directory {self.project_staging_path}. Aborting."
             )

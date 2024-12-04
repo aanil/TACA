@@ -1,5 +1,8 @@
 # TACA Version Log
 
+## 20241204.1
+Add support for staging ONT data on Miarka
+
 ## 20241127.1
 
 Add support for organising ONT data on Miarka
