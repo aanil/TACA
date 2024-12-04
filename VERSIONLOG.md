@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241204.1
+
+Add automated QC reports with ToulligQC for ONT.
+
 ## 20241128.1
 
 Add automated cleanup to ONT transfer script.
