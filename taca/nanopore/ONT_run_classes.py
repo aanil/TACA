@@ -63,7 +63,8 @@ class ONT_run:
         self.minknow_reports_dir = CONFIG["nanopore_analysis"]["minknow_reports_dir"]
         self.toulligqc_reports_dir = CONFIG["nanopore_analysis"][
             "toulligqc_reports_dir"
-        ]  # TODO
+        ]
+        self.toulligqc_executable = CONFIG["nanopore_analysis"]["toulligqc_executable"]
         self.analysis_server = CONFIG["nanopore_analysis"].get("analysis_server", None)
         self.rsync_options = CONFIG["nanopore_analysis"]["rsync_options"]
         for k, v in self.rsync_options.items():
@@ -417,7 +418,7 @@ class ONT_run:
                 command_args["--barcodes"] = barcodes_arg
 
         # Build command list
-        command_list = ["toulligqc"]
+        command_list = [self.toulligqc_executable]
         for k, v in command_args.items():
             command_list.append(k)
             if v:
