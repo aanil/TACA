@@ -101,7 +101,7 @@ def process_user_run(ont_user_run: ONT_user_run):
             logger.info(
                 f"{ont_user_run.run_name}: Generating and publishing ToulligQC report..."
             )
-            ont_user_run.touliggqc_report()
+            ont_user_run.toulligqc_report()
 
             # Copy metadata
             logger.info(f"{ont_user_run.run_name}: Copying metadata...")
@@ -174,7 +174,7 @@ def process_qc_run(ont_qc_run: ONT_qc_run):
 
     # Generate and publish TouliggQC report
     logger.info(f"{ont_qc_run.run_name}: Generating and publishing ToulligQC report...")
-    ont_qc_run.touliggqc_report()
+    ont_qc_run.toulligqc_report()
 
     # Look at seq data
     if not ont_qc_run.has_raw_seq_output():

@@ -349,7 +349,7 @@ class ONT_run:
             logger.error(msg)
             raise RsyncError(msg)
 
-    def touliggqc_report(self):
+    def toulligqc_report(self):
         """Generate a QC report for the run using ToulligQC and publish it to GenStat."""
 
         # Get sequencing summary file
