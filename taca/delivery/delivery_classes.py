@@ -305,6 +305,40 @@ class Upload:
         else:
             raise AssertionError(f"DDS project NOT set up for {self.project_id}")
 
+    def upload_data(self, delivery_id):
+        """Upload staged data with DDS"""
+        log_dir = os.path.join(
+            os.path.dirname(CONFIG.get("log").get("file")), "DDS_logs"
+        )
+        project_log_dir = os.path.join(log_dir, self.project_id)
+        cmd = [
+            "dds",
+            "--no-prompt",
+            "data",
+            "put",
+            "--mount-dir",
+            project_log_dir,
+            "--project",
+            delivery_id,
+            "--source",
+            self.stage_dir,
+        ]
+        try:
+            output = ""
+            for line in self._execute(cmd):
+                output += line
+                print(line, end="")
+        except subprocess.CalledProcessError as e:
+            logger.exception(
+                f"DDS upload failed while uploading {self.stage_dir} to {delivery_id}"
+            )
+            raise e
+        if "Upload completed!" in output:
+            delivery_status = "uploaded"
+        else:
+            delivery_status = None
+        return delivery_status
+
     def _execute(self, cmd):
         """Helper function to both capture and print subprocess output.
         Adapted from https://stackoverflow.com/a/4417735
@@ -315,10 +349,6 @@ class Upload:
         return_code = popen.wait()
         if return_code:
             raise subprocess.CalledProcessError(return_code, cmd)
-
-    def upload_data(self):
-        """Upload staged data to DDS."""
-        pass
 
 
 class UploadNanopore(Upload):

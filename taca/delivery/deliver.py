@@ -59,13 +59,17 @@ def upload_to_dds(
         project_description,
         ignore_orderportal_members,
     )
-    upload_object.create_dds_project()
-    upload_object.upload_data()
-    # Get information about project from statusdb
-    # Create a DDS project
-    # Upload all data in stage_dir to DDS project
-    # Future todo: Update statusdb with status "uploaded" and DDS project ID
-    pass
+    dds_project_id = upload_object.create_dds_project()
+    delivery_status = upload_object.upload_data(dds_project_id)
+    if delivery_status:
+        logger.info(
+            f"Successfully uploaded {stage_dir} to DDS project {dds_project_id}"
+        )
+        # Future todo: Update statusdb with status "uploaded" and DDS project ID
+    else:
+        logger.error(
+            f"Something went wrong when uploading data to {dds_project_id} for project {project}."
+        )
 
 
 def release_dds_project(project, dds_id):
