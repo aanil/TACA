@@ -51,6 +51,7 @@ nanopore_analysis:
                 anglerfish_path: mock
     minknow_reports_dir: {tmp.name}/ngi-internal/minknow_reports/
     toulligqc_reports_dir: {tmp.name}/ngi-internal/toulligqc_reports/
+    toulligqc_executable: toulligqc
     rsync_options:
         '-Lav': None
         '-r': None
