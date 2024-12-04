@@ -109,6 +109,14 @@ class ONT_run:
         assert self.has_file("/.sync_finished")
         assert self.has_file("/final_summary*.txt")
 
+        # Raw seq files
+        assert any(
+            [
+                dir in os.listdir(self.run_abspath)
+                for dir in ["pod5", "pod5_pass", "fast5", "fast5_pass"]
+            ]
+        )
+
         # NGI files from instrument
         assert self.has_file("/pore_count_history.csv")
         assert self.has_file("/run_path.txt")
@@ -351,7 +359,7 @@ class ONT_run:
 
         # Determine the format of the raw sequencing data, sorted by preference
         raw_data_dir_options = [
-            "pod5_passed",
+            "pod5_pass",
             "pod5",
             "fast5_pass",
             "fast5",
@@ -404,7 +412,7 @@ class ONT_run:
         }
         if barcode_dirs:
             command_args["--barcoding"] = ""
-            if ss_barcodes:
+            if samplesheet and ss_barcodes:
                 command_args["--samplesheet"] = samplesheet
                 command_args["--barcodes"] = barcodes_arg
 
@@ -431,7 +439,7 @@ class ONT_run:
             f"{self.run_name}: Transferring ToulligQC report to ngi-internal..."
         )
         # Transfer the ToulligQC .html report file to ngi-internal, renaming it to the full run ID. Requires password-free SSH access.
-        report_src_path = self.get_file("toulligqc_report/report*.html")
+        report_src_path = self.get_file("/toulligqc_report/report.html")
         report_dest_path = os.path.join(
             self.toulligqc_reports_dir,
             f"ToulligQC_{self.run_name}.html",
@@ -609,7 +617,7 @@ class ONT_qc_run(ONT_run):
     def has_raw_seq_output(self) -> bool:
         """Check whether run has sequencing data output."""
 
-        raw_seq_dirs = ["pod5", "fast5_pass"]
+        raw_seq_dirs = ["pod5", "pod5_pass", "fast5", "fast5_pass"]
 
         for dir in raw_seq_dirs:
             if os.path.exists(os.path.join(self.run_abspath, dir)):
