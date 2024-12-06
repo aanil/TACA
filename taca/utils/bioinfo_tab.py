@@ -8,7 +8,7 @@ from collections import OrderedDict, defaultdict
 from flowcell_parser.classes import RunParametersParser, SampleSheetParser
 
 from taca.element.Aviti_Runs import Aviti_Run
-from taca.nanopore.ONT_run_classes import ONT_run
+from taca.nanopore.ONT_run_classes import ONT_run, ONT_RUN_PATTERN
 from taca.utils import statusdb
 from taca.utils.config import CONFIG
 from taca.utils.misc import send_mail
@@ -49,8 +49,10 @@ def collect_runs():
                             logger.info(f"Working on {run_dir}")
                             update_statusdb(run_dir, inst_brand)
                         elif inst_brand == "ont":
-                            logger.info(f"Working on {run_dir}")
-                            update_statusdb(run_dir, inst_brand)
+                            # Skip archived, no_backup, nosync and qc folders
+                            if re.match(ONT_RUN_PATTERN, os.path.basename(os.path.abspath(run_dir))):
+                                logger.info(f"Working on {run_dir}")
+                                update_statusdb(run_dir, inst_brand)
 
                 nosync_data_dir = os.path.join(data_dir, "nosync")
                 potential_nosync_run_dirs = glob.glob(
@@ -84,11 +86,6 @@ def update_statusdb(run_dir, inst_brand):
             # WARNING - Run parameters file not found for ElementRun(<run_dir>), might not be ready yet
             return
     elif inst_brand == "ont":
-        base_name = os.path.basename(os.path.abspath(run_dir))
-        # Skip archived, no_backup, nosync and qc folders
-        if base_name in ["archived", "no_backup", "nosync", "qc"]:
-            return
-
         run_dir = os.path.abspath(run_dir)
         try:
             ont_run = ONT_run(run_dir)
@@ -277,8 +274,8 @@ def get_ss_projects_ont(ont_run, couch_connection):
     flowcell_info = (
         couch_connection["nanopore_runs"].view("info/lims")[flowcell_id].rows[0]
     )
-    if flowcell_info.value and "sample_data" in flowcell_info.value["loading"][0]:
-        samples = flowcell_info.value["loading"][0]["sample_data"]
+    if flowcell_info.value and flowcell_info.value.get("loading", []) and "sample_data" in flowcell_info.value["loading"][-1]:
+        samples = flowcell_info.value["loading"][-1]["sample_data"]
         for sample_dict in samples:
             sample_id = sample_dict["sample_name"]
             project = sample_id.split("_")[0]
