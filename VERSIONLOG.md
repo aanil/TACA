@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241206.1
+
+Add ONT instrument data to bioinfo_tab
+
 ## 20241112.1
 
 Add support for backing up Element Aviti data to PDC

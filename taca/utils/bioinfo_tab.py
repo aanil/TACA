@@ -8,7 +8,7 @@ from collections import OrderedDict, defaultdict
 from flowcell_parser.classes import RunParametersParser, SampleSheetParser
 
 from taca.element.Aviti_Runs import Aviti_Run
-from taca.nanopore.ONT_run_classes import ONT_run, ONT_RUN_PATTERN
+from taca.nanopore.ONT_run_classes import ONT_RUN_PATTERN, ONT_run
 from taca.utils import statusdb
 from taca.utils.config import CONFIG
 from taca.utils.misc import send_mail
@@ -50,7 +50,10 @@ def collect_runs():
                             update_statusdb(run_dir, inst_brand)
                         elif inst_brand == "ont":
                             # Skip archived, no_backup, nosync and qc folders
-                            if re.match(ONT_RUN_PATTERN, os.path.basename(os.path.abspath(run_dir))):
+                            if re.match(
+                                ONT_RUN_PATTERN,
+                                os.path.basename(os.path.abspath(run_dir)),
+                            ):
                                 logger.info(f"Working on {run_dir}")
                                 update_statusdb(run_dir, inst_brand)
 
@@ -274,7 +277,11 @@ def get_ss_projects_ont(ont_run, couch_connection):
     flowcell_info = (
         couch_connection["nanopore_runs"].view("info/lims")[flowcell_id].rows[0]
     )
-    if flowcell_info.value and flowcell_info.value.get("loading", []) and "sample_data" in flowcell_info.value["loading"][-1]:
+    if (
+        flowcell_info.value
+        and flowcell_info.value.get("loading", [])
+        and "sample_data" in flowcell_info.value["loading"][-1]
+    ):
         samples = flowcell_info.value["loading"][-1]["sample_data"]
         for sample_dict in samples:
             sample_id = sample_dict["sample_name"]
