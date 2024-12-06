@@ -366,10 +366,10 @@ class UploadNanopore(Upload):
         super().__init__(
             project,
             stage_dir,
-            pi_email=None,
-            add_user=None,
-            project_description=None,
-            ignore_orderportal_members=False,
+            pi_email,
+            add_user,
+            project_description,
+            ignore_orderportal_members,
         )
 
 
