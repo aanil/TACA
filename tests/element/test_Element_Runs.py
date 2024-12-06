@@ -552,9 +552,12 @@ class TestRun:
 
     def test_start_demux(self, mock_db, create_dirs):
         tmp: tempfile.TemporaryDirectory = create_dirs
-        with mock.patch("subprocess.Popen") as mock_Popen, mock.patch(
-            "taca.element.Element_Runs.Run.generate_demux_command"
-        ) as mock_command:
+        with (
+            mock.patch("subprocess.Popen") as mock_Popen,
+            mock.patch(
+                "taca.element.Element_Runs.Run.generate_demux_command"
+            ) as mock_command,
+        ):
             mock_command.return_value = "test command"
             run = to_test.Run(create_element_run_dir(create_dirs), get_config(tmp))
             run.start_demux("mock_run_manifest", "mock_demux_dir")

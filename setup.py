@@ -43,6 +43,8 @@ setup(
             "server_status = taca.server_status.cli:server_status",
             "backup = taca.backup.cli:backup",
             "create_env = taca.testing.cli:uppmax_env",
+            "organise = taca.organise.cli:organise_flowcells",
+            "delivery = taca.delivery.cli:delivery",
         ],
     },
     install_requires=install_requires,
