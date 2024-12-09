@@ -47,6 +47,10 @@ def get_upload_object(
     )
 
 
+def get_release_object(project, dds_project, dds_deadline=45, no_dds_mail=False):
+    return ReleaseNanopore(project, dds_project, dds_deadline, no_dds_mail)
+
+
 class Stage:
     """Defines a generic staging object."""
 
@@ -385,3 +389,70 @@ class UploadElement(Upload):
 
     def __init__(self, project, stage_dir):
         super().__init__(project, stage_dir)
+
+
+class Release:
+    """Defines a generic release object."""
+
+    def __init__(self, project, dds_project, dds_deadline, no_dds_mail):
+        self.project_id = project
+        self.dds_project = dds_project
+        self.dds_deadline = dds_deadline
+        self.no_dds_mail = no_dds_mail
+
+    def release_project(self):
+        """Release DDS project to user."""
+        try:
+            cmd = [
+                "dds",
+                "--no-prompt",
+                "project",
+                "status",
+                "release",
+                "--project",
+                self.dds_project,
+                "--deadline",
+                str(self.dds_deadline),
+            ]
+            if self.no_dds_mail:
+                cmd.append("--no-mail")
+            process_handle = subprocess.run(cmd)
+            process_handle.check_returncode()
+            logger.info(
+                f"Project {self.project_id} succefully delivered. Delivery project {self.dds_project} was released to the user."
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                f"Could not release project {self.project_id}, an error occurred."
+            )
+            raise e
+
+
+class ReleaseNanopore(Release):
+    """Defines an object for releasing Nanopore data."""
+
+    def __init__(self, project, dds_project, dds_deadline, no_dds_mail):
+        super().__init__(project, dds_project, dds_deadline, no_dds_mail)
+
+    def update_statusdb(self):
+        pass
+
+
+class ReleaseIllumina(Release):
+    """Defines an object for releasing Illumina data."""
+
+    def __init__(self, project, dds_project, dds_deadline, no_dds_mail):
+        super().__init__(project, dds_project, dds_deadline, no_dds_mail)
+
+    def update_statusdb(self):
+        pass
+
+
+class ReleaseElement(Release):
+    """Defines an object for releasing Element data."""
+
+    def __init__(self, project, dds_project, dds_deadline, no_dds_mail):
+        super().__init__(project, dds_project, dds_deadline, no_dds_mail)
+
+    def update_statusdb(self):
+        pass
