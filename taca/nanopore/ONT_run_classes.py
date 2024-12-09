@@ -385,10 +385,13 @@ class ONT_run:
             samplesheet = ss_glob[0]
 
         # Run has barcode subdirs
-        if len(glob.glob(f"{self.run_abspath}/fastq_pass/barcode*")) > 0:
+        barcode_dirs_glob = glob.glob(f"{self.run_abspath}/{raw_data_dir}/barcode*")
+        if len(barcode_dirs_glob) > 0:
             barcode_dirs = True
+            raw_data_path = barcode_dirs_glob[0]
         else:
             barcode_dirs = False
+            raw_data_path = f"{self.run_abspath}/{raw_data_dir}"
 
         # Determine barcodes
         if samplesheet:
@@ -407,7 +410,7 @@ class ONT_run:
 
         command_args = {
             "--sequencing-summary-source": summary,
-            f"--{raw_data_format}-source": f"{self.run_abspath}/{raw_data_dir}",
+            f"--{raw_data_format}-source": raw_data_path,
             "--output-directory": self.run_abspath,
             "--report-name": "toulligqc_report",
         }
@@ -443,7 +446,7 @@ class ONT_run:
         report_src_path = self.get_file("/toulligqc_report/report.html")
         report_dest_path = os.path.join(
             self.toulligqc_reports_dir,
-            f"ToulligQC_{self.run_name}.html",
+            f"report_{self.run_name}.html",
         )
         transfer_object = RsyncAgent(
             src_path=report_src_path,
