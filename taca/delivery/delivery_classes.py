@@ -215,7 +215,7 @@ class Upload:
         if not ignore_orderportal_members:
             logger.info("Fetching additional members from order portal.")
             if self.order_details.get("owner", {}):
-                owner_email = self.order_details.get("owner").get("email")
+                owner_email = self.order_details.get("owner").get("email", {})
                 if (
                     owner_email
                     and owner_email != self.pi_email
@@ -223,14 +223,18 @@ class Upload:
                 ):
                     other_member_details.append(owner_email)
             if self.order_details.get("fields", {}):
-                bioinfo_email = self.order_details.get("fields").get("project_bx_email")
+                bioinfo_email = self.order_details.get("fields").get(
+                    "project_bx_email", {}
+                )
                 if (
                     bioinfo_email
                     and bioinfo_email != self.pi_email
                     and bioinfo_email not in other_member_details
                 ):
                     other_member_details.append(bioinfo_email)
-                lab_email = self.order_details.get("fields").get("project_lab_email")
+                lab_email = self.order_details.get("fields").get(
+                    "project_lab_email", {}
+                )
                 if (
                     lab_email
                     and lab_email != self.pi_email
