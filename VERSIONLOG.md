@@ -1,5 +1,8 @@
 # TACA Version Log
 
+## 20241210.2
+Add support for uploading ONT data to DDS
+
 ## 20241210.1
 
 Tweaks and bugfixes for ToulligQC.
