@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241210.1
+
+Tweaks and bugfixes for ToulligQC.
+
 ## 20241204.2
 
 Add automated QC reports with ToulligQC for ONT.
