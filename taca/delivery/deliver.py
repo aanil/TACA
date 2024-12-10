@@ -4,7 +4,11 @@ import logging
 import os
 import sys
 
-from taca.delivery.delivery_classes import get_staging_object, get_upload_object
+from taca.delivery.delivery_classes import (
+    get_release_object,
+    get_staging_object,
+    get_upload_object,
+)
 from taca.utils.config import CONFIG
 
 logger = logging.getLogger(__name__)
@@ -72,8 +76,10 @@ def upload_to_dds(
         )
 
 
-def release_dds_project(project, dds_id):
+def release_dds_project(project, dds_project, dds_deadline, no_dds_mail):
     """Release DDS project to user"""
-    # Release DDS project
-    # Update statusdb with status "delivered"
+    # Future todo: Add query to confirm release
+    release_object = get_release_object(project, dds_project, dds_deadline, no_dds_mail)
+    release_object.release_project()
+    # Future todo: Update statusdb with status "delivered"
     pass
