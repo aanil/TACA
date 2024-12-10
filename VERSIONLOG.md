@@ -1,5 +1,8 @@
 # TACA Version Log
 
+## 20241210.3
+Add support for releasing DDS projects
+
 ## 20241210.2
 Add support for uploading ONT data to DDS
 
