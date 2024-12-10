@@ -27,7 +27,8 @@ def create_dirs():
         │   └── promethion
         ├── ngi-internal
         │   ├── minknow_reports
-        │   └── toulligqc_reports
+        │   └── other_reports
+        │       └── toulligqc_reports
         ├── ngi-nas-ns
         │   ├── Aviti_data
         │   ├── NextSeq_data
@@ -95,7 +96,7 @@ def create_dirs():
 
     # GenStat
     os.makedirs(f"{tmp.name}/ngi-internal/minknow_reports")
-    os.makedirs(f"{tmp.name}/ngi-internal/toulligqc_reports")
+    os.makedirs(f"{tmp.name}/ngi-internal/other_reports/toulligqc_reports")
 
     # Misc. ONT dirs/files
     os.makedirs(f"{tmp.name}/log")
