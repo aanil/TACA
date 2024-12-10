@@ -218,16 +218,17 @@ class Upload:
         other_member_details = []
         if not ignore_orderportal_members:
             logger.info("Fetching additional members from order portal.")
-            try:
-                owner_email = self.order_details.get("owner", {}).get("email")
+            if self.order_details.get("owner", {}):
+                owner_email = self.order_details.get("owner").get("email", {})
                 if (
                     owner_email
                     and owner_email != self.pi_email
                     and owner_email not in other_member_details
                 ):
                     other_member_details.append(owner_email)
-                bioinfo_email = self.order_details.get("fields", {}).get(
-                    "project_bx_email"
+            if self.order_details.get("fields", {}):
+                bioinfo_email = self.order_details.get("fields").get(
+                    "project_bx_email", {}
                 )
                 if (
                     bioinfo_email
@@ -235,8 +236,8 @@ class Upload:
                     and bioinfo_email not in other_member_details
                 ):
                     other_member_details.append(bioinfo_email)
-                lab_email = self.order_details.get("fields", {}).get(
-                    "project_lab_email"
+                lab_email = self.order_details.get("fields").get(
+                    "project_lab_email", {}
                 )
                 if (
                     lab_email
@@ -244,12 +245,15 @@ class Upload:
                     and lab_email not in other_member_details
                 ):
                     other_member_details.append(lab_email)
-            except (AssertionError, ValueError):
-                pass  # nothing to worry, just move on
+        if other_member_details:
+            logger.info(
+                "The following additional contacts were found and will be added "
+                f"to the DDS delivery project: {', '.join(other_member_details)}"
+            )
         if other_member_emails:
             logger.info(
-                "Other appropriate contacts were found, they will be added "
-                f"to DDS delivery project: {', '.join(other_member_emails)}"
+                "The following additional contacts were provided by the operator, "
+                f"they will be added to the DDS delivery project: {', '.join(other_member_emails)}"
             )
             for email in other_member_emails:
                 if email not in other_member_details:

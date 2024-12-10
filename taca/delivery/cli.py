@@ -52,7 +52,7 @@ def stage(project, flowcells, samples):
     envvar="ORDER_PORTAL",
     required=True,
     type=click.File("r"),
-    help="Path to order portal credantials to retrive project information",
+    help="Path to order portal credentials to retrieve project information",
 )
 @click.option(
     "--statusdb_config",
