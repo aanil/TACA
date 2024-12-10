@@ -214,7 +214,7 @@ class Upload:
         other_member_details = []
         if not ignore_orderportal_members:
             logger.info("Fetching additional members from order portal.")
-            if self.order_details.get("owner"):
+            if self.order_details.get("owner", {}):
                 owner_email = self.order_details.get("owner").get("email")
                 if (
                     owner_email
@@ -222,7 +222,7 @@ class Upload:
                     and owner_email not in other_member_details
                 ):
                     other_member_details.append(owner_email)
-            if self.order_details.get("fields"):
+            if self.order_details.get("fields", {}):
                 bioinfo_email = self.order_details.get("fields").get("project_bx_email")
                 if (
                     bioinfo_email
