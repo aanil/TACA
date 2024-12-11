@@ -4,6 +4,10 @@
 
 No longer reserve PromethION column 3 for Clinical Genomics.
 
+## 20241210.4
+
+Change server_status nas to update statusdb by default
+
 ## 20241210.3
 
 Add support for releasing DDS projects
