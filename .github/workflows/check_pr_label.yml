@@ -1,0 +1,19 @@
+name: Check Label on PR
+on: [pull_request]
+
+jobs:
+  check-pr_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Check if the PR contains the label validation or no validation
+        id: prlabel_check
+        run: |
+          if (( ! contains( github.event.pull_request.labels.*.name, 'validation') ||  ! contains( github.event.pull_request.labels.*.name, 'no validation') )); then
+            echo "Labels not properly set on PR"
+            exit 1 # Fail the workflow if it does not have appropriate labels
+          fi
