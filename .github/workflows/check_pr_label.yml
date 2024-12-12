@@ -13,7 +13,7 @@ jobs:
       - name: Check if the PR contains the label validation or no validation
         id: prlabel_check
         run: |
-          if (( ! contains( github.event.pull_request.labels.*.name, 'validation') ||  ! contains( github.event.pull_request.labels.*.name, 'no validation') )); then
+          if ! contains( github.event.pull_request.labels.*.name, 'validation') &&  ! contains( github.event.pull_request.labels.*.name, 'no validation')
             echo "Labels not properly set on PR"
             exit 1 # Fail the workflow if it does not have appropriate labels
           fi
