@@ -1,5 +1,9 @@
 # TACA Version Log
 
+## 20241212.1
+
+Add ONT instrument data to bioinfo_tab
+
 ## 20241211.1
 
 No longer reserve PromethION column 3 for Clinical Genomics.
