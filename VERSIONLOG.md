@@ -1,8 +1,32 @@
 # TACA Version Log
 
-## 20241206.1
+## 20241212.1
 
 Add ONT instrument data to bioinfo_tab
+
+## 20241211.1
+
+No longer reserve PromethION column 3 for Clinical Genomics.
+
+## 20241210.4
+
+Change server_status nas to update statusdb by default
+
+## 20241210.3
+
+Add support for releasing DDS projects
+
+## 20241210.2
+
+Add support for uploading ONT data to DDS
+
+## 20241210.1
+
+Tweaks and bugfixes for ToulligQC.
+
+## 20241204.2
+
+Add automated QC reports with ToulligQC for ONT.
 
 ## 20241204.1
 

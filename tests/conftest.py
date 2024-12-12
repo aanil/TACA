@@ -25,7 +25,10 @@ def create_dirs():
         │   ├── minion
         │   │   └── qc
         │   └── promethion
-        ├── minknow_reports
+        ├── ngi-internal
+        │   ├── minknow_reports
+        │   └── other_reports
+        │       └── toulligqc_reports
         ├── ngi-nas-ns
         │   ├── Aviti_data
         │   ├── NextSeq_data
@@ -91,8 +94,11 @@ def create_dirs():
     os.makedirs(f"{tmp.name}/ngi-nas-ns/samplesheets/NovaSeqXPlus")
     os.makedirs(f"{tmp.name}/ngi-nas-ns/samplesheets/Aviti")
 
+    # GenStat
+    os.makedirs(f"{tmp.name}/ngi-internal/minknow_reports")
+    os.makedirs(f"{tmp.name}/ngi-internal/other_reports/toulligqc_reports")
+
     # Misc. ONT dirs/files
-    os.makedirs(f"{tmp.name}/minknow_reports")
     os.makedirs(f"{tmp.name}/log")
     open(f"{tmp.name}/log/transfer_promethion.tsv", "w").close()
     open(f"{tmp.name}/log/transfer_minion.tsv", "w").close()
